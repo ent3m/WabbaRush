@@ -9,8 +9,8 @@
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="PreferSystemChrome"
         TransparencyLevelHint="AcrylicBlur"
-        Background="{StaticResource MilkyWhite}"
-        Height="380" Width="460"
+        Background="{StaticResource BackgroundColor}"
+        Height="385" Width="480"
         WindowStartupLocation="CenterScreen">
 
   <!-- Main container -->
@@ -53,7 +53,7 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="3"/>
         <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-          <Setter Property="Background" Value="{StaticResource LightPurpleHighlight}"/>
+          <Setter Property="Background" Value="{StaticResource HighlightColor}"/>
         </Style>
         <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
           <Setter Property="Background" Value="Transparent"/>
@@ -95,7 +95,7 @@
         <StackPanel Orientation="Horizontal"
                     VerticalAlignment="Center">
           <Image Classes="wabbajack"/>
-          <TextBlock FontFamily="{StaticResource MountainKing}"
+          <TextBlock FontFamily="{StaticResource BannerFont}"
                      FontSize="32"
                      FontWeight="Heavy"
                      Foreground="DarkViolet"

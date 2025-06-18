@@ -11,12 +11,12 @@
     </Application.Styles>
 
   <Application.Resources>
-    <FontFamily x:Key="MountainKing">
+    <FontFamily x:Key="BannerFont">
       /Assets/MountainKingRegular.ttf#Mountain King
     </FontFamily>
-    <SolidColorBrush x:Key="LightPurpleHighlight" 
+    <SolidColorBrush x:Key="HighlightColor" 
                      Color="#a955df" Opacity="98"/>
-    <SolidColorBrush x:Key="MilkyWhite"
-                 Color="#fdf7ff" Opacity="90"/>
+    <SolidColorBrush x:Key="BackgroundColor"
+                     Color="#f2f9ff" Opacity="90"/>
   </Application.Resources>
 </Application>
