@@ -14,7 +14,7 @@ namespace WabbajackDownloader.Views;
 
 public partial class MainWindow : Window
 {
-    private static readonly Uri repoUri = new("https://www.github.com");
+    private static readonly Uri repoUri = new("https://github.com/ent3m/WabbajackDownloader");
     private const string selectFileMessage = "Select wabbajack file";
     private const string selectFolderMessage = "Select download folder";
     private static readonly FilePickerFileType wabbajackFileType = new("Wabbajack file")
