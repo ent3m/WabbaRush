@@ -1,0 +1,195 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignHeight="360" d:DesignWidth="480"
+        x:Class="WabbajackDownloader.Views.MainWindow"
+        Icon="/Assets/wabbajack.ico"
+        Title="Wabbajack Downloader"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="{StaticResource MilkyWhite}"
+        Height="380" Width="460"
+        WindowStartupLocation="CenterScreen">
+
+  <!-- Main container -->
+  <Panel Margin="20">
+    <!-- Styles -->
+    <Panel.Styles>
+      <Style Selector="Image">
+        <Setter Property="Height" Value="24"/>
+      </Style>
+      <Style Selector="Image.wabbajack">
+        <Setter Property="Height" Value="64"/>
+        <Setter Property="Source" Value="/Assets/wabbajack.png"/>
+      </Style>
+
+      <Style Selector="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Spacing" Value="5"/>
+      </Style>
+      
+      <Style Selector="TextBlock">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      </Style>
+
+      <Style Selector="CheckBox:unchecked /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="DarkViolet"/>
+      </Style>
+      <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="DarkViolet"/>
+      </Style>
+
+      <Style Selector="Button">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="DarkViolet"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="3"/>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{StaticResource LightPurpleHighlight}"/>
+        </Style>
+        <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="Transparent"/>
+          <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+      </Style>
+      
+      <Style Selector="Button.picker">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Grid.Column" Value="1"/>
+        <Style Selector="^ TextBlock">
+          <Setter Property="Grid.Column" Value="1"/>
+        </Style>
+        <Style Selector="^ Image">
+          <Setter Property="Source" Value="/Assets/folder.png"/>
+          <Setter Property="Grid.Column" Value="2"/>
+          <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="^:pointerover">
+          <Style Selector="^ Image">
+            <Setter Property="Source" Value="/Assets/folder-open.png"/>
+          </Style>
+        </Style>
+      </Style>
+    </Panel.Styles>
+    
+    <StackPanel Orientation="Vertical"
+                Spacing="10">
+      <!-- Banner with hyperlink button -->
+      <Button Click="OpenRepo"
+              BorderThickness="0"
+              Name="bannerButton">
+        <Button.Styles>
+          <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+          </Style>
+        </Button.Styles>
+        <StackPanel Orientation="Horizontal"
+                    VerticalAlignment="Center">
+          <Image Classes="wabbajack"/>
+          <TextBlock FontFamily="{StaticResource MountainKing}"
+                     FontSize="32"
+                     FontWeight="Heavy"
+                     Foreground="DarkViolet"
+                     Text="Wabbajack Downloader"/>
+          <Image Classes="wabbajack"/>
+        </StackPanel>
+      </Button>
+
+      <!-- File selection controls -->
+      <Grid ColumnDefinitions="*,4*,*">
+        <Button Name="filePickerButton"
+                Click="OpenWabbajackFilePicker"
+                Classes="picker">
+          <Grid ColumnDefinitions="30,*,30"
+                Width="{Binding $parent.Bounds.Width}">
+            <TextBlock Name="fileText"/>
+            <Image/>
+          </Grid>
+        </Button>
+      </Grid>
+
+      <!-- Folder selection controls -->
+      <Grid ColumnDefinitions="*,4*,*">
+        <Button Name="folderPickerButton"
+                Click="OpenDownloadFolderPicker"
+                Classes="picker">
+          <Grid ColumnDefinitions="30,*,30"
+                Width="{Binding $parent.Bounds.Width}">
+            <TextBlock Name="folderText"/>
+            <Image/>
+          </Grid>
+        </Button>
+      </Grid>
+
+      <!-- Nexus login -->
+      <Button Name="loginButton" 
+              Click="DisplaySigninWindow"
+              Width="{Binding #downloadButton.Bounds.Width}">
+        <StackPanel HorizontalAlignment="Center">
+          <Image Source="/Assets/nexus.png"/>
+          <TextBlock Text="Login"/>
+        </StackPanel>
+      </Button>
+
+      <!-- Max Download Size and Auto Retry -->
+      <StackPanel HorizontalAlignment="Center">
+        <TextBlock Text="Auto retry"/>
+        <CheckBox Name="autoRetryBox"
+                  IsChecked="True"
+                  ToolTip.Tip="Auto re-download on failure? (3 attempts per file)"/>
+        <TextBlock Text="Max Download Size"/>
+        <NumericUpDown Name="maxSizeBox"
+                       Minimum="0.01"
+                       Maximum="9999"
+                       Value="500"
+                       FormatString="0.00"
+                       ShowButtonSpinner="False"
+                       Width="80"
+                       VerticalAlignment="Center"
+                       HorizontalContentAlignment="Center"
+                       BorderBrush="DarkViolet"
+                       Background="Transparent">
+        </NumericUpDown>
+        <TextBlock Text="MB"/>
+
+      </StackPanel>
+
+      <!-- Download button -->
+      <Button Name="downloadButton" 
+              Click="DownloadFiles" 
+              IsEnabled="False">
+        <StackPanel>
+          <TextBlock Text="Download"/>
+          <Image Source="/Assets/download.png"/>
+        </StackPanel>
+      </Button>
+
+      <!-- Information and progress -->
+      <StackPanel Orientation="Vertical">
+        <StackPanel HorizontalAlignment="Center">
+          <TextBlock Name="infoText"/>
+          <Image Name="downloadDoneIcon"
+                 Source="/Assets/download-done.png"
+                 IsVisible="False"/>
+        </StackPanel>
+        <ProgressBar Name="downloadProgressBar"
+                     IsVisible="False"
+                     Value="0"
+                     Maximum="0"
+                     ShowProgressText="True"
+                     ProgressTextFormat="{}{0}/{3} ({1:0}%)"
+                     Width="300"/>
+      </StackPanel>
+    </StackPanel>
+  </Panel>
+
+</Window>

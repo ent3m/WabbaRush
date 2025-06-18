@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <PropertyGroup Label="ApplicationConfiguration">
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\wabbajack.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Label="PublishConfiguration" Condition="'$(Configuration)'=='Release'">
+    <PublishAot>true</PublishAot>
+    <PublishTrimmed>True</PublishTrimmed>
+    <TrimMode>link</TrimMode>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <!--        <SelfContained>true</SelfContained>-->
+  </PropertyGroup>
+
+  <ItemGroup Label="ImportLib">
+    <DirectPInvoke Include="libHarfBuzzSharp" />
+    <NativeLibrary Include="native\libHarfBuzzSharp.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
+    <DirectPInvoke Include="libSkiaSharp" />
+    <NativeLibrary Include="native\skia.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
+    <NativeLibrary Include="native\SkiaSharp.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
+    <DirectPInvoke Include="av_libglesv2" />
+    <NativeLibrary Include="native\libANGLE_static.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
+    <NativeLibrary Include="native\libGLESv2_static.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
+    <LinkerArg Include="gdi32.lib;synchronization.lib;d3d9.lib;dxgi.lib;dxguid.lib" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup Label="TrimmerRootConfiguration" Condition="'$(Configuration)'=='Release'">
+    <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
+    <!--        <TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
+  </ItemGroup>
+
+  <ItemGroup Label="PackageReferences">
+    <PackageReference Include="Avalonia" Version="11.3.1" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.1" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.1" />
+    <!--        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.1" />-->
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.1">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="CefGlue.Avalonia" Version="120.6099.211" />
+    <PackageReference Include="System.Text.Json" Version="9.0.6" />
+  </ItemGroup>
+</Project>

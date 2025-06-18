@@ -1,0 +1,22 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="WabbajackDownloader.App"
+             xmlns:local="using:WabbajackDownloader"
+             xmlns:clr="using:System"
+             RequestedThemeVariant="Light">
+             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+  
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+
+  <Application.Resources>
+    <FontFamily x:Key="MountainKing">
+      /Assets/MountainKingRegular.ttf#Mountain King
+    </FontFamily>
+    <SolidColorBrush x:Key="LightPurpleHighlight" 
+                     Color="#a955df" Opacity="98"/>
+    <SolidColorBrush x:Key="MilkyWhite"
+                 Color="#fdf7ff" Opacity="90"/>
+  </Application.Resources>
+</Application>
