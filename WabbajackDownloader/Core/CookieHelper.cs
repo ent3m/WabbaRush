@@ -3,7 +3,7 @@ using System.Net;
 using System.Text;
 using Xilium.CefGlue;
 
-namespace WabbajackDownloader;
+namespace WabbajackDownloader.Core;
 
 internal static class CookieHelper
 {

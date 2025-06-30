@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using WabbajackDownloader.Exceptions;
 using WabbajackDownloader.Http;
 
-namespace WabbajackDownloader;
+namespace WabbajackDownloader.Core;
 
 internal class NexusDownloader : IDisposable
 {
@@ -40,16 +40,16 @@ internal class NexusDownloader : IDisposable
         downloadClient = new HttpClient();
     }
 
-    public async Task InitializeAsync()
-    {
-        await ScanDownloadFolder(downloadFolder, acceptedExtensions, existingFiles);
-#if DEBUG
-        Debug.WriteLine($"Found {existingFiles.Count} existing files within {downloadFolder.Path}");
-#endif
-    }
-
     public async Task DownloadFilesAsync(int position, CancellationToken token)
     {
+        if (App.Settings.DiscoverExistingFiles)
+        {
+            await ScanDownloadFolder(downloadFolder, acceptedExtensions, existingFiles);
+#if DEBUG
+            Debug.WriteLine($"Found {existingFiles.Count} existing files within {downloadFolder.Path}");
+#endif
+        }
+
         for (int i = position; i < downloads.Count; i++)
         {
             Position = i;

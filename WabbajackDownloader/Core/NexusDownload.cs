@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace WabbajackDownloader;
+namespace WabbajackDownloader.Core;
 
 internal record NexusDownload(GameData Game, string FileName, string ModID, string FileID, ulong FileSize, string Hash)
 {

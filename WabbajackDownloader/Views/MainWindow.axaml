@@ -2,17 +2,30 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignHeight="360" d:DesignWidth="480"
+        mc:Ignorable="d" d:DesignHeight="480" d:DesignWidth="480"
         x:Class="WabbajackDownloader.Views.MainWindow"
         Icon="/Assets/wabbajack.ico"
         Title="Wabbajack Downloader"
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="PreferSystemChrome"
         TransparencyLevelHint="AcrylicBlur"
-        Background="{StaticResource BackgroundColor}"
-        Height="385" Width="480"
+        Background="{StaticResource WindowBackgroundColor}"
+        Height="480" Width="480"
         WindowStartupLocation="CenterScreen">
 
+  <Window.Resources>
+    <!-- Slider colors -->
+    <StaticResource x:Key="SliderTrackValueFill" ResourceKey="MainColor" />
+    <!-- Expander colors -->
+    <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="MainColor" />
+    <StaticResource x:Key="ExpanderHeaderBorderBrushPointerOver" ResourceKey="MainColor" />
+    <StaticResource x:Key="ExpanderHeaderBorderBrushPressed" ResourceKey="MainColor" />
+    <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundPointerOver" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundPressed" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundDisabled" ResourceKey="BackgroundColor" />
+  </Window.Resources>
+  
   <!-- Main container -->
   <Panel Margin="20">
     <!-- Styles -->
@@ -39,25 +52,25 @@
       </Style>
 
       <Style Selector="CheckBox:unchecked /template/ Border#NormalRectangle">
-        <Setter Property="BorderBrush" Value="DarkViolet"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
       </Style>
       <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
-        <Setter Property="BorderBrush" Value="DarkViolet"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
       </Style>
 
       <Style Selector="Button">
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderBrush" Value="DarkViolet"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="3"/>
         <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
           <Setter Property="Background" Value="{StaticResource HighlightColor}"/>
         </Style>
         <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
-          <Setter Property="Background" Value="Transparent"/>
-          <Setter Property="BorderBrush" Value="Transparent"/>
+          <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+          <Setter Property="BorderBrush" Value="{StaticResource BackgroundColor}"/>
         </Style>
       </Style>
       
@@ -79,6 +92,29 @@
           </Style>
         </Style>
       </Style>
+
+      <Style Selector="Slider:horizontal">
+        <Style Selector="^ Track">
+          <Style Selector="^ RepeatButton Border">
+            <Setter Property="Height" Value="3"/>
+          </Style>
+          <Style Selector="^ Thumb">
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Width" Value="16"/>
+            <Setter Property="Background" Value="{StaticResource MainColor}"/>
+          </Style>
+        </Style>
+      </Style>
+
+      <Style Selector="NumericUpDown">
+        <Setter Property="Increment" Value="1"/>
+        <Setter Property="FormatString" Value="0"/>
+        <Setter Property="Width" Value="120"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+      </Style>
     </Panel.Styles>
     
     <StackPanel Orientation="Vertical"
@@ -89,7 +125,7 @@
               Name="bannerButton">
         <Button.Styles>
           <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
           </Style>
         </Button.Styles>
         <StackPanel Orientation="Horizontal"
@@ -98,7 +134,7 @@
           <TextBlock FontFamily="{StaticResource BannerFont}"
                      FontSize="32"
                      FontWeight="Heavy"
-                     Foreground="DarkViolet"
+                     Foreground="{StaticResource MainColor}"
                      Text="Wabbajack Downloader"/>
           <Image Classes="wabbajack"/>
         </StackPanel>
@@ -140,28 +176,45 @@
         </StackPanel>
       </Button>
 
-      <!-- Max Download Size and Auto Retry -->
-      <StackPanel HorizontalAlignment="Center">
-        <TextBlock Text="Auto retry"/>
-        <CheckBox Name="autoRetryBox"
-                  IsChecked="True"
-                  ToolTip.Tip="Auto re-download on failure? (3 attempts per file)"/>
-        <TextBlock Text="Max Download Size"/>
-        <NumericUpDown Name="maxSizeBox"
-                       Minimum="0.01"
-                       Maximum="9999"
-                       Value="500"
-                       FormatString="0.00"
-                       ShowButtonSpinner="False"
-                       Width="80"
-                       VerticalAlignment="Center"
-                       HorizontalContentAlignment="Center"
-                       BorderBrush="DarkViolet"
-                       Background="Transparent">
-        </NumericUpDown>
-        <TextBlock Text="MB"/>
-
-      </StackPanel>
+      <!-- Expandable options -->
+      <Grid ColumnDefinitions="*,4*,*">
+        <Expander Name="optionsBox"
+                  Grid.Column="1"
+                  HorizontalAlignment="Stretch"
+                  BorderBrush="{StaticResource MainColor}"
+                  Background="{StaticResource BackgroundColor}"
+                  MinHeight="37"
+                  Header="Options">
+          <StackPanel HorizontalAlignment="Center"
+                      Orientation="Vertical">
+            <!-- Max download size -->
+            <StackPanel Orientation="Vertical">
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Max Download Size:"/>
+                <TextBlock Text="{Binding #maxSizeBox.Value}"/>
+                <TextBlock Text="MB"/>
+              </StackPanel>
+              <Slider Name="maxSizeBox"
+                      TickFrequency="1"
+                      IsSnapToTickEnabled="True"/>
+            </StackPanel>
+            <!-- Max concurrent download -->
+            <StackPanel HorizontalAlignment="Center">
+              <TextBlock Text="Max Download:"
+                         Width="100"
+                         TextAlignment="Center"/>
+              <NumericUpDown Name="maxDownloadBox"/>
+            </StackPanel>
+            <!-- Max retry -->
+            <StackPanel HorizontalAlignment="Center">
+              <TextBlock Text="Max Retry:"
+                         Width="100"
+                         TextAlignment="Center"/>
+              <NumericUpDown Name="maxRetryBox"/>
+            </StackPanel>
+          </StackPanel>
+        </Expander>
+      </Grid>
 
       <!-- Download button -->
       <Button Name="downloadButton" 

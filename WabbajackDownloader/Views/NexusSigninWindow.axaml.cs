@@ -4,25 +4,27 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
+using WabbajackDownloader.Core;
 using Xilium.CefGlue;
 using Xilium.CefGlue.Avalonia;
 using Xilium.CefGlue.Common.Handlers;
 
 namespace WabbajackDownloader.Views;
 
-public partial class NexusSigninWindow : Window
+public partial class NexusSigninWindow : Window, IDisposable
 {
+    private const string loginPage = "https://users.nexusmods.com/auth/sign_in?redirect_url=";
     private readonly AvaloniaCefBrowser browser;
-    private const string loginPage = "https://users.nexusmods.com/auth/sign_in?redirect_url=https%3A%2F%2Fwww.nexusmods.com%2Fskyrimspecialedition%2Fmods%2F12604";
     private readonly TaskCompletionSource<CookieContainer> tcs = new();
 
     public NexusSigninWindow()
     {
         InitializeComponent();
 
+        var address = loginPage + Uri.EscapeDataString(App.Settings.NexusLandingPage);
         browser = new AvaloniaCefBrowser(RequestContextFactory)
         {
-            Address = loginPage,
+            Address = address,
             LifeSpanHandler = new PopupLifeSpanHandler(),
             DownloadHandler = new DownloadNothingHandler(),
         };
@@ -42,14 +44,16 @@ public partial class NexusSigninWindow : Window
 
     public async Task<CookieContainer> ShowAndGetCookiesAsync(Window owner)
     {
-#pragma warning disable CS4014 // This call is not meant to be awaited. It's used to show this window as a dialog window.
+#pragma warning disable CS4014 // we don't wait for dialog window to close here
         ShowDialog(owner);
-#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+#pragma warning restore CS4014 // instead, we're waiting for cookies to be fetched
         var result = await tcs.Task;
-        browser.Dispose();
         return result;
     }
 
+    /// <summary>
+    /// Fetch cookies when this browser is closing
+    /// </summary>
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         if (!tcs.Task.IsCompleted)
@@ -57,6 +61,9 @@ public partial class NexusSigninWindow : Window
         base.OnClosing(e);
     }
 
+    /// <summary>
+    /// Update address text when page begins loading if we're not in a popup browser
+    /// </summary>
     private void OnBrowserLoadStart(object sender, Xilium.CefGlue.Common.Events.LoadStartEventArgs e)
     {
         if (e.Frame.Browser.IsPopup || !e.Frame.IsMain)
@@ -70,11 +77,20 @@ public partial class NexusSigninWindow : Window
         });
     }
 
+    /// <summary>
+    /// Begin fetching cookies so that the task can be completed
+    /// </summary>
     private void GetCookies()
     {
         var manager = browser.RequestContext.GetCookieManager(null);
         var visitor = new NexusCookieVisitor(manager, tcs);
         visitor.GetCookies();
+    }
+
+    public void Dispose()
+    {
+        browser.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -118,17 +134,11 @@ public partial class NexusSigninWindow : Window
     /// <summary>
     /// Retrieve all cookies from nexusmods.com and signal the completion via the provided TaskCompletionSource
     /// </summary>
-    private class NexusCookieVisitor : CefCookieVisitor
+    private class NexusCookieVisitor(CefCookieManager manager, TaskCompletionSource<CookieContainer> tcs) : CefCookieVisitor
     {
-        private readonly CefCookieManager manager;
+        private readonly CefCookieManager manager = manager;
         private readonly CookieContainer container = new();
-        private readonly TaskCompletionSource<CookieContainer> tcs;
-
-        public NexusCookieVisitor(CefCookieManager manager, TaskCompletionSource<CookieContainer> tcs)
-        {
-            this.manager = manager;
-            this.tcs = tcs;
-        }
+        private readonly TaskCompletionSource<CookieContainer> tcs = tcs;
 
         public void GetCookies()
         {

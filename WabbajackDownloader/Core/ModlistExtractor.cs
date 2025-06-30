@@ -4,7 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
 
-namespace WabbajackDownloader;
+namespace WabbajackDownloader.Core;
 
 internal static class ModlistExtractor
 {
