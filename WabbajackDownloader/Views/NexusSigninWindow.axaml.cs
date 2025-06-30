@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Diagnostics;
 using System.Net;
@@ -143,7 +144,7 @@ public partial class NexusSigninWindow : Window, IDisposable
         public void GetCookies()
         {
             if (!manager.VisitAllCookies(this))
-                throw new Exception("Unable to access cookies.");
+                throw new AccessViolationException("Unable to access cookies.");
         }
 
         protected override bool Visit(CefCookie cookie, int count, int total, out bool deleteCookie)
@@ -151,10 +152,7 @@ public partial class NexusSigninWindow : Window, IDisposable
             var convertedCookie = CookieHelper.ConvertCefCookie(cookie);
             container.Add(convertedCookie);
 
-#if DEBUG
-            Debug.WriteLine($"Printing Cookie No. {count + 1}/{total}...");
-            Debug.WriteLine(CookieHelper.ToString(convertedCookie));
-#endif
+            App.Logger.LogInformation("Added cookie No. {count}/{total}:\n{cookie}", count + 1, total, CookieHelper.ToString(convertedCookie));
 
             deleteCookie = false;
             // cookies finish enumerating when count == total -1 or when returning false

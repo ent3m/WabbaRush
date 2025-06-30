@@ -1,4 +1,5 @@
 ﻿using Avalonia.Platform.Storage;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -45,9 +46,7 @@ internal class NexusDownloader : IDisposable
         if (App.Settings.DiscoverExistingFiles)
         {
             await ScanDownloadFolder(downloadFolder, acceptedExtensions, existingFiles);
-#if DEBUG
-            Debug.WriteLine($"Found {existingFiles.Count} existing files within {downloadFolder.Path}");
-#endif
+            App.Logger.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder.Path);
         }
 
         for (int i = position; i < downloads.Count; i++)
@@ -59,17 +58,14 @@ internal class NexusDownloader : IDisposable
             // skip if file size exceeds size limit or if file already exists
             if (download.FileSize > maxDownloadSize)
             {
-#if DEBUG
-                Debug.WriteLine($"File {download.FileName} exceeds download limit: {download.FileSize} > {maxDownloadSize}. Skipping ahead.");
-#endif
+                App.Logger.LogInformation("File {download.FileName} exceeds download limit: {download.FileSize} > {maxDownloadSize}. Skipping ahead.", 
+                    download.FileName, download.FileSize, maxDownloadSize);
                 continue;
             }
 
             if (existingFiles.TryGetValue(download.FileName, out ulong size) && size == download.FileSize)
             {
-#if DEBUG
-                Debug.WriteLine($"File {download.FileName} already exists. Skipping ahead.");
-#endif
+                App.Logger.LogInformation("File {download.FileName} already exists. Skipping ahead.", download.FileName);
                 continue;
             }
 
@@ -77,10 +73,9 @@ internal class NexusDownloader : IDisposable
             token.ThrowIfCancellationRequested();
             var request = ConstructRequest(download);
             var response = await request.SendAsync(fetchClient, true, token);
-#if DEBUG
-            var responseString = await response.ReadAsStringAsync(token);
-            Debug.WriteLine($"HTTP Response Content: {responseString}");
-#endif
+
+            App.Logger.LogInformation("HTTP Response Content: {responseString}", response.ReadAsStringAsync(token).GetAwaiter().GetResult());
+
             // interpret download url and extract file name
             var json = JsonNode.Parse(response.ReadAsStream(token))?.AsObject()
                 ?? throw new InvalidHttpReponseException($"Unable to parse Http response as JsonObject.");
@@ -88,18 +83,16 @@ internal class NexusDownloader : IDisposable
                 ?? throw new InvalidHttpReponseException($"Http response does not contain download url: {json}");
 
             var fileName = GetDownloadUrl(url);
+
+            // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
+            // if the file already exists, avoid wasting bandwidth and skip to the next download
             if (download.FileName != fileName)
             {
-#if DEBUG
-                Debug.WriteLine($"File {fileName} does not match wabbajack file name. Checking again.");
-#endif
-                // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
-                // if that is the case, avoid wasting bandwidth and skip to the next download
+                App.Logger.LogInformation("File {fileName} does not match wabbajack file name. Checking again.", fileName);
+
                 if (existingFiles.ContainsKey(fileName))
                 {
-#if DEBUG
-                    Debug.WriteLine($"File {fileName} already exists. Skipping download.");
-#endif
+                    App.Logger.LogInformation("File {fileName} already exists. Skipping ahead.", fileName);
                     continue;
                 }
             }
@@ -114,9 +107,8 @@ internal class NexusDownloader : IDisposable
                 await fileStream.FlushAsync(token);
             }
             existingFiles[download.FileName] = download.FileSize;
-#if DEBUG
-            Debug.WriteLine($"Downloaded file '{fileName}' succesfully.");
-#endif
+
+            App.Logger.LogInformation("Downloaded file '{fileName}' succesfully.", fileName);
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 using System.IO;
 using System.Text.Json;
 using Xilium.CefGlue;
@@ -19,19 +20,6 @@ public class AppSettings
     public required CefLogSeverity CefLogLevel { get; set; }
 
     private readonly string file;
-    private static AppSettings GetDefaultSettings(string file) => new(file)
-    {
-        DownloadFolder = "",
-        WabbajackFile = "",
-        MaxConcurrentDownload = 3,
-        MaxRetry = 3,
-        MaxDownloadSize = 1000,
-        NexusLandingPage = "https://www.nexusmods.com/skyrimspecialedition/mods/12604",
-        DiscoverExistingFiles = true,
-        BufferSize = 16384,
-        LogLevel = LogLevel.Information,
-        CefLogLevel = CefLogSeverity.Error
-    };
 
     private AppSettings(string file)
     {
@@ -46,16 +34,38 @@ public class AppSettings
             var json = File.ReadAllText(file);
             settings = JsonSerializer.Deserialize<AppSettings>(json, SourceGenerationContext.Default.AppSettings);
         }
-        catch
+        catch (Exception ex) when (ex is not FileNotFoundException)
         {
-
+            App.Logger.LogCritical(ex.GetBaseException(), "Cannot load settings from {file}.", file);
         }
         return settings ?? GetDefaultSettings(file);
     }
 
     public void SaveSettings()
     {
-        var json = JsonSerializer.Serialize<AppSettings>(this, SourceGenerationContext.Default.AppSettings);
-        File.WriteAllText(file, json);
+        try
+        {
+            var json = JsonSerializer.Serialize<AppSettings>(this, SourceGenerationContext.Default.AppSettings);
+            File.WriteAllText(file, json);
+        }
+        catch (Exception ex)
+        {
+            App.Logger.LogError(ex.GetBaseException(), "Cannot save settings to file.");
+            throw;
+        }
     }
+
+    private static AppSettings GetDefaultSettings(string file) => new(file)
+    {
+        DownloadFolder = "",
+        WabbajackFile = "",
+        MaxConcurrentDownload = 3,
+        MaxRetry = 3,
+        MaxDownloadSize = 1000,
+        NexusLandingPage = "https://www.nexusmods.com/skyrimspecialedition/mods/12604",
+        DiscoverExistingFiles = true,
+        BufferSize = 16384,
+        LogLevel = LogLevel.Information,
+        CefLogLevel = CefLogSeverity.Error
+    };
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging;
 
 namespace WabbajackDownloader.Core;
 
@@ -16,6 +17,8 @@ internal static class ModlistExtractor
         // the archive should contain a file named "modlist"
         var entry = file.GetEntry("modlist") ?? throw new InvalidDataException($"The archive does not contain a modlist.");
         // modlist should be a valid json object
+        App.Logger.LogInformation("Extracting downloads from mod list...");
+
         var modlist = JsonNode.Parse(entry.Open())?.AsObject();
         if (modlist != null)
         {
@@ -36,7 +39,10 @@ internal static class ModlistExtractor
                     // get the "Meta" element that contains the game name, mod ID, and file ID
                     var meta = archiveObject?["Meta"]?.ToString() ?? archiveObject?["meta"]?.ToString();
                     if (name == null || hash == null || meta == null)
+                    {
+                        App.Logger.LogTrace("Archive entry is not a nexus download. Skipping ahead.\n{entry}", archiveObject);
                         continue;
+                    }
 
                     // try to extract game name, mod id, and file id
                     if (ExtractValues(meta, out var gameName, out var modID, out var fileID))
@@ -48,9 +54,19 @@ internal static class ModlistExtractor
                             downloads.Add(download);
                         }
                     }
+                    else
+                    {
+                        App.Logger.LogTrace("Cannot extract game name, mod ID, and file ID from {meta}.", meta);
+                    }
                 }
             }
+            else
+            {
+                App.Logger.LogWarning("Cannot extract downloads from this mod list because it does not have an Archives entry.");
+            }
         }
+        else
+            App.Logger.LogWarning("modlist is not a valid json object.");
 
         return downloads;
     }

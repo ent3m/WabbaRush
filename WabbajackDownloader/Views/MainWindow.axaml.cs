@@ -160,8 +160,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("Unable to extract mods from wabbajack file.");
-            Debug.WriteLine($"{ex.GetBaseException()}: {ex.Message}");
+            App.Logger.LogCritical(ex.GetBaseException(), "Unable to extract mods from wabbajack file {settings.WabbajackFile}.", settings.WabbajackFile);
         }
     }
 
@@ -190,10 +189,10 @@ public partial class MainWindow : Window
         container = await signinWindow.ShowAndGetCookiesAsync(this);
         // get rid of the reference to signin window so that it can be disposed
         App.SigninWindow = null;
-#if DEBUG
-        Debug.WriteLine($"Cookies added: {container.GetCookies(new Uri("https://www.nexusmods.com")).Count}");
-        Debug.WriteLine($"Cookie header: {container.GetCookieHeader(new Uri("https://www.nexusmods.com/Core/Libs/Common/Managers/Downloads?GenerateDownloadUrl"))}");
-#endif
+
+        App.Logger.LogInformation("Cookies added: {count}.", container.Count);
+        App.Logger.LogInformation("Cookie header: {header}", container.GetCookieHeader(new Uri("https://www.nexusmods.com/Core/Libs/Common/Managers/Downloads?GenerateDownloadUrl")));
+        
         EnableDownloadButton();
     }
 
@@ -304,15 +303,17 @@ public partial class MainWindow : Window
                 // we moved on to a new position since the last retry. reset retry count
                 else
                     retryCount = 0;
-#if DEBUG
-                Debug.WriteLine($"Download failed. Attempting again for the {retryCount} time.\n{ex.GetBaseException()}: {ex.Message}");
-#endif
+
+                App.Logger.LogCritical(ex.GetBaseException(), "Download failed. Attempting again for the {retryCount}th time.", retryCount);
                 // attempt to download again from the failed position
                 currentPos = downloader.Position;
                 await DownloadFilesCore(downloader, currentPos);
             }
             else
+            {
+                App.Logger.LogError(ex.GetBaseException(), "Download failed. No retry remaining.");
                 throw;
+            }
         }
     }
 
