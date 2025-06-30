@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,34 +19,55 @@ internal class NexusDownloader : IDisposable
 {
     public event Action<int, string, ulong>? Downloading;
     public int Position { get; private set; }
+
     private readonly IStorageFolder downloadFolder;
     private readonly List<NexusDownload> downloads;
-    private readonly ulong maxDownloadSize;
-    private readonly Dictionary<string, ulong> existingFiles;
-    private static readonly string[] acceptedExtensions = [".zip", ".rar", ".7z"];
-    private readonly HttpClient fetchClient;
-    private readonly HttpClient downloadClient;
 
-    public NexusDownloader(IStorageFolder downloadFolder, List<NexusDownload> downloads, CookieContainer cookieContainer, ulong maxDownloadSize)
+    private readonly ulong maxDownloadSize;
+    private readonly int bufferSize;
+    private readonly int minRetryDelay;
+    private readonly int maxRetryDelay;
+    private readonly bool checkHash;
+
+    private readonly HttpClient fetchClient;
+    private readonly HttpClient[] downloadClients;
+    private readonly HttpClient downloadClient; // obsolete
+    private readonly Random random = new();
+    private Dictionary<string, ulong>? existingFiles;
+
+    private static readonly string[] acceptedExtensions = [".zip", ".rar", ".7z"];
+
+    public NexusDownloader(IStorageFolder downloadFolder, List<NexusDownload> downloads, CookieContainer cookieContainer)
     {
+        maxDownloadSize = (ulong)App.Settings.MaxDownloadSize * 1024 * 1024;
+        bufferSize = App.Settings.BufferSize;
+        minRetryDelay = App.Settings.MinRetryDelay;
+        maxRetryDelay = App.Settings.MaxRetryDelay;
+        checkHash = App.Settings.CheckHash;
+        var maxConcurrent = App.Settings.MaxConcurrentDownload;
+
         this.downloadFolder = downloadFolder;
         this.downloads = downloads;
-        this.maxDownloadSize = maxDownloadSize;
-        existingFiles = [];
         HttpClientHandler handler = new()
         {
             CookieContainer = cookieContainer,
             UseCookies = true
         };
         fetchClient = new HttpClient(handler, true);
-        downloadClient = new HttpClient();
+
+        downloadClient = new HttpClient(); // obsolete
+        downloadClients = new HttpClient[maxConcurrent];
+        for (int i = 0; i < maxConcurrent; i++)
+        {
+            downloadClients[i] = new HttpClient();
+        }
     }
 
     public async Task DownloadFilesAsync(int position, CancellationToken token)
     {
         if (App.Settings.DiscoverExistingFiles)
         {
-            await ScanDownloadFolder(downloadFolder, acceptedExtensions, existingFiles);
+            existingFiles = await ScanDownloadFolder(downloadFolder, acceptedExtensions);
             App.Logger.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder.Path);
         }
 
@@ -58,14 +80,14 @@ internal class NexusDownloader : IDisposable
             // skip if file size exceeds size limit or if file already exists
             if (download.FileSize > maxDownloadSize)
             {
-                App.Logger.LogInformation("File {download.FileName} exceeds download limit: {download.FileSize} > {maxDownloadSize}. Skipping ahead.", 
+                App.Logger.LogTrace("File {download.FileName} exceeds download limit: {download.FileSize} > {maxDownloadSize}. Skipping ahead.", 
                     download.FileName, download.FileSize, maxDownloadSize);
                 continue;
             }
 
-            if (existingFiles.TryGetValue(download.FileName, out ulong size) && size == download.FileSize)
+            if (existingFiles != null && existingFiles.TryGetValue(download.FileName, out ulong size) && size == download.FileSize)
             {
-                App.Logger.LogInformation("File {download.FileName} already exists. Skipping ahead.", download.FileName);
+                App.Logger.LogTrace("File {download.FileName} already exists. Skipping ahead.", download.FileName);
                 continue;
             }
 
@@ -77,22 +99,24 @@ internal class NexusDownloader : IDisposable
             App.Logger.LogInformation("HTTP Response Content: {responseString}", response.ReadAsStringAsync(token).GetAwaiter().GetResult());
 
             // interpret download url and extract file name
-            var json = JsonNode.Parse(response.ReadAsStream(token))?.AsObject()
+            var jsonNode = await JsonNode.ParseAsync(response.ReadAsStream(token), cancellationToken: token)
+                ?? throw new InvalidHttpReponseException($"Unable to parse Http response as JsonNode.");
+            var json = jsonNode?.AsObject()
                 ?? throw new InvalidHttpReponseException($"Unable to parse Http response as JsonObject.");
             var url = json["url"]?.ToString()
                 ?? throw new InvalidHttpReponseException($"Http response does not contain download url: {json}");
 
-            var fileName = GetDownloadUrl(url);
+            var fileName = GetFileName(url);
 
             // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
             // if the file already exists, avoid wasting bandwidth and skip to the next download
             if (download.FileName != fileName)
             {
-                App.Logger.LogInformation("File {fileName} does not match wabbajack file name. Checking again.", fileName);
+                App.Logger.LogTrace("File {fileName} does not match wabbajack file name. Checking again.", fileName);
 
-                if (existingFiles.ContainsKey(fileName))
+                if (existingFiles != null && existingFiles.ContainsKey(fileName))
                 {
-                    App.Logger.LogInformation("File {fileName} already exists. Skipping ahead.", fileName);
+                    App.Logger.LogTrace("File {fileName} already exists. Skipping ahead.", fileName);
                     continue;
                 }
             }
@@ -106,7 +130,6 @@ internal class NexusDownloader : IDisposable
                 await downloadStream.CopyToAsync(fileStream, token);
                 await fileStream.FlushAsync(token);
             }
-            existingFiles[download.FileName] = download.FileSize;
 
             App.Logger.LogInformation("Downloaded file '{fileName}' succesfully.", fileName);
         }
@@ -117,8 +140,9 @@ internal class NexusDownloader : IDisposable
     /// <summary>
     /// Scan the folder for existing files
     /// </summary>
-    private static async Task ScanDownloadFolder(IStorageFolder folder, string[] acceptedExtensions, Dictionary<string, ulong> result)
+    private static async Task<Dictionary<string, ulong>> ScanDownloadFolder(IStorageFolder folder, string[] acceptedExtensions)
     {
+        var results = new Dictionary<string, ulong>();
         var items = folder.GetItemsAsync();
         await foreach (var item in items)
         {
@@ -130,10 +154,11 @@ internal class NexusDownloader : IDisposable
                 {
                     var properties = await file.GetBasicPropertiesAsync();
                     var size = properties.Size ?? 0;
-                    result.Add(name, size);
+                    results.Add(name, size);
                 }
             }
         }
+        return results;
     }
 
     /// <summary>
@@ -163,7 +188,7 @@ internal class NexusDownloader : IDisposable
     /// <summary>
     /// Extract file name from a nexus download response
     /// </summary>
-    private static string GetDownloadUrl(ReadOnlySpan<char> url)
+    private static string GetFileName(ReadOnlySpan<char> url)
     {
         ReadOnlySpan<char> baseUrl;
         ReadOnlySpan<char> name;

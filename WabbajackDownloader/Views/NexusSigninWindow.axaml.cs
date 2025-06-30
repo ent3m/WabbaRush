@@ -152,7 +152,7 @@ public partial class NexusSigninWindow : Window, IDisposable
             var convertedCookie = CookieHelper.ConvertCefCookie(cookie);
             container.Add(convertedCookie);
 
-            App.Logger.LogInformation("Added cookie No. {count}/{total}:\n{cookie}", count + 1, total, CookieHelper.ToString(convertedCookie));
+            App.Logger.LogTrace("Added cookie No. {count}/{total}:\n{cookie}", count + 1, total, CookieHelper.ToString(convertedCookie));
 
             deleteCookie = false;
             // cookies finish enumerating when count == total -1 or when returning false

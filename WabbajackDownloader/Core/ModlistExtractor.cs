@@ -1,9 +1,12 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
-using Microsoft.Extensions.Logging;
+using System.Threading;
+using System.Threading.Tasks;
+using WabbajackDownloader.Hashing;
 
 namespace WabbajackDownloader.Core;
 
@@ -50,7 +53,7 @@ internal static class ModlistExtractor
                         if (GameData.GameLookup.TryGetValue(gameName, out var game))
                         {
                             // add valid entry to list
-                            var download = new NexusDownload(game, name, modID, fileID, size, hash);
+                            var download = new NexusDownload(game, name, modID, fileID, size, Hash.Interpret(hash));
                             downloads.Add(download);
                         }
                     }

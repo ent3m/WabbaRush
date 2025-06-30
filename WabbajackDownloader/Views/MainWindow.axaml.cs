@@ -41,7 +41,6 @@ public partial class MainWindow : Window
     private const int minRetry = 0;
     private const int maxRetry = 10;
 
-    private readonly ILogger logger;
     private readonly AppSettings settings;
 
     private List<NexusDownload>? downloads;
@@ -49,7 +48,6 @@ public partial class MainWindow : Window
     private IStorageFolder? downloadFolder;
     private readonly CancellationTokenSource downloadTokenSource = new();
 
-    private bool autoRetry;
     private int currentPos;
     private int retryCount;
     private const int maxRetryCount = 3;
@@ -58,9 +56,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        logger = App.Logger;
         settings = App.Settings;
-
         ToolTip.SetTip(bannerButton, repoUri);
         maxSizeBox.Minimum = minDownloadSize;
         maxSizeBox.Maximum = maxDownloadSize;
@@ -228,8 +224,7 @@ public partial class MainWindow : Window
         }
 
         // prepare downloader
-        var maxDownloadSize = (ulong)settings.MaxDownloadSize * 1024 * 1024;
-        var downloader = new NexusDownloader(downloadFolder, downloads, container, maxDownloadSize);
+        var downloader = new NexusDownloader(downloadFolder, downloads, container);
         downloader.Downloading += UpdateDownloadProgress;
 
         // disable controls
@@ -245,7 +240,7 @@ public partial class MainWindow : Window
         retryCount = 0;
         try
         {
-            await DownloadFilesCore(downloader, 0);
+            await downloader.DownloadFilesAsync(0, downloadTokenSource.Token);
             infoText.Text = "All done!";
             downloadDoneIcon.IsVisible = true;
         }
@@ -295,7 +290,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            if (autoRetry && retryCount < maxRetryCount)
+            if (retryCount < maxRetryCount)
             {
                 // we're stuck in the same position, so we increase retry count
                 if (downloader.Position == currentPos)
