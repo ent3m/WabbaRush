@@ -10,140 +10,265 @@ using System.Runtime.InteropServices.Marshalling;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using WabbajackDownloader.Extensions;
 using WabbajackDownloader.Exceptions;
+using WabbajackDownloader.Hashing;
 using WabbajackDownloader.Http;
+using System.Runtime.CompilerServices;
 
 namespace WabbajackDownloader.Core;
 
 internal class NexusDownloader : IDisposable
 {
-    public event Action<int, string, ulong>? Downloading;
-    public int Position { get; private set; }
+    private static readonly string[] acceptedExtensions = [".zip", ".rar", ".7z"];
 
     private readonly IStorageFolder downloadFolder;
-    private readonly List<NexusDownload> downloads;
-
-    private readonly ulong maxDownloadSize;
+    private readonly IReadOnlyList<NexusDownload> downloads;
+    private readonly long maxDownloadSize;
     private readonly int bufferSize;
+    private readonly int maxRetries;
     private readonly int minRetryDelay;
     private readonly int maxRetryDelay;
     private readonly bool checkHash;
+    private readonly string userAgent;
+    private readonly bool discoverExistingFiles;
+    private readonly ILogger? logger;
+    private readonly IProgress<int>? downloadProgress;
+    private readonly ProgressPool? progressPool;
 
-    private readonly HttpClient fetchClient;
-    private readonly HttpClient[] downloadClients;
-    private readonly HttpClient downloadClient; // obsolete
     private readonly Random random = new();
-    private Dictionary<string, ulong>? existingFiles;
+    private Dictionary<string, long>? existingFiles;
+    private readonly HttpClientHandler handler;
+    private readonly SemaphoreSlim semaphore;
 
-    private static readonly string[] acceptedExtensions = [".zip", ".rar", ".7z"];
-
-    public NexusDownloader(IStorageFolder downloadFolder, List<NexusDownload> downloads, CookieContainer cookieContainer)
+    public NexusDownloader(IStorageFolder downloadFolder, IReadOnlyList<NexusDownload> downloads, CookieContainer cookieContainer,
+        int maxDownloadSize, int bufferSize, int maxRetries, int minRetryDelay, int maxRetryDelay, bool checkHash, 
+        int maxConcurrentDownload, string userAgent, bool discoverExistingFiles, ILogger? logger,
+        IProgress<int>? downloadProgress, ProgressPool? progressPool)
     {
-        maxDownloadSize = (ulong)App.Settings.MaxDownloadSize * 1024 * 1024;
-        bufferSize = App.Settings.BufferSize;
-        minRetryDelay = App.Settings.MinRetryDelay;
-        maxRetryDelay = App.Settings.MaxRetryDelay;
-        checkHash = App.Settings.CheckHash;
-        var maxConcurrent = App.Settings.MaxConcurrentDownload;
-
         this.downloadFolder = downloadFolder;
         this.downloads = downloads;
-        HttpClientHandler handler = new()
+        this.maxDownloadSize = maxDownloadSize * 1024 * 1024;
+        this.bufferSize = bufferSize;
+        this.maxRetries = maxRetries;
+        this.minRetryDelay = minRetryDelay;
+        this.maxRetryDelay = maxRetryDelay;
+        this.checkHash = checkHash;
+        this.userAgent = userAgent;
+        this.discoverExistingFiles = discoverExistingFiles;
+        this.logger = logger;
+        this.downloadProgress = downloadProgress;
+        this.progressPool = progressPool;
+
+        handler = new HttpClientHandler()
         {
             CookieContainer = cookieContainer,
             UseCookies = true
         };
-        fetchClient = new HttpClient(handler, true);
-
-        downloadClient = new HttpClient(); // obsolete
-        downloadClients = new HttpClient[maxConcurrent];
-        for (int i = 0; i < maxConcurrent; i++)
-        {
-            downloadClients[i] = new HttpClient();
-        }
+        semaphore = new SemaphoreSlim(maxConcurrentDownload);
     }
 
-    public async Task DownloadFilesAsync(int position, CancellationToken token)
+    public async Task DownloadAsync(CancellationToken token)
     {
-        if (App.Settings.DiscoverExistingFiles)
+        if (discoverExistingFiles)
         {
-            existingFiles = await ScanDownloadFolder(downloadFolder, acceptedExtensions);
-            App.Logger.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder.Path);
+            existingFiles = await ScanFolderAsync(downloadFolder).ConfigureAwait(false);
+            logger?.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder.Path);
+        }
+        
+        // creates a wrapper around the original token so that we can cancel all download tasks
+        using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+        var linkedToken = linkedTokenSource.Token;
+
+        var downloadTasks = new List<Task>();
+        int pos = 0;
+        foreach (var download in downloads)
+        {
+            int i = Interlocked.Increment(ref pos);
+            logger?.LogTrace("File {count}/{total} is queueing for download.", i, downloads.Count);
+            // semaphore should not listen for linked token, otherwise the only exception getting thrown will be OperationCanceledException
+            await semaphore.WaitAsync(token).ConfigureAwait(false);
+
+            // cancel all remaining downloads if one download fails
+            if (linkedToken.IsCancellationRequested)
+            {
+                break;
+            }
+
+            downloadProgress?.Report(i);
+            var progress = progressPool?.Get(download);
+
+            downloadTasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    await DownloadFileWithRetryAsync(download, progress?.Progress, linkedToken);
+                }
+                // catch OperationCancenceledException that bubbles up from pending downloads
+                catch (OperationCanceledException)
+                {
+                    logger?.LogWarning("Download {downloadName} is cancelled.", download.FileName);
+                    throw;
+                }
+                // cancel all pending downloads if one download fails
+                catch
+                {
+                    linkedTokenSource.Cancel();
+                    throw;
+                }
+                finally
+                {
+                    progressPool?.Return(progress!); // if progressPool is not null then progress won't be null
+                    semaphore.Release();
+                }
+            }, linkedToken));
         }
 
-        for (int i = position; i < downloads.Count; i++)
+        await Task.WhenAll(downloadTasks);
+    }
+
+    /// <summary>
+    /// Download file with error handling and retry
+    /// </summary>
+    private async Task DownloadFileWithRetryAsync(NexusDownload download, IProgress<long>? progress, CancellationToken token)
+    {
+        int retryCount = 0;
+
+        while (retryCount < maxRetries)
         {
-            Position = i;
-            var download = downloads[i];
-            OnDownloading(i, download.FileName, download.FileSize);
-
-            // skip if file size exceeds size limit or if file already exists
-            if (download.FileSize > maxDownloadSize)
+            try
             {
-                App.Logger.LogTrace("File {download.FileName} exceeds download limit: {download.FileSize} > {maxDownloadSize}. Skipping ahead.", 
-                    download.FileName, download.FileSize, maxDownloadSize);
-                continue;
+                token.ThrowIfCancellationRequested();
+                await DownloadFileAsync(download, progress, token);
+                break;
             }
-
-            if (existingFiles != null && existingFiles.TryGetValue(download.FileName, out ulong size) && size == download.FileSize)
+            catch (OperationCanceledException)
             {
-                App.Logger.LogTrace("File {download.FileName} already exists. Skipping ahead.", download.FileName);
-                continue;
+                throw;
             }
-
-            // construct and send POST request to acquire download url
-            token.ThrowIfCancellationRequested();
-            var request = ConstructRequest(download);
-            var response = await request.SendAsync(fetchClient, true, token);
-
-            App.Logger.LogInformation("HTTP Response Content: {responseString}", response.ReadAsStringAsync(token).GetAwaiter().GetResult());
-
-            // interpret download url and extract file name
-            var jsonNode = await JsonNode.ParseAsync(response.ReadAsStream(token), cancellationToken: token)
-                ?? throw new InvalidHttpReponseException($"Unable to parse Http response as JsonNode.");
-            var json = jsonNode?.AsObject()
-                ?? throw new InvalidHttpReponseException($"Unable to parse Http response as JsonObject.");
-            var url = json["url"]?.ToString()
-                ?? throw new InvalidHttpReponseException($"Http response does not contain download url: {json}");
-
-            var fileName = GetFileName(url);
-
-            // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
-            // if the file already exists, avoid wasting bandwidth and skip to the next download
-            if (download.FileName != fileName)
+            catch (Exception ex)
             {
-                App.Logger.LogTrace("File {fileName} does not match wabbajack file name. Checking again.", fileName);
-
-                if (existingFiles != null && existingFiles.ContainsKey(fileName))
+                // these are most likely user errors. it's useless to retry here
+                if (ex is InvalidJsonResponseException or UnauthorizedAccessException)
                 {
-                    App.Logger.LogTrace("File {fileName} already exists. Skipping ahead.", fileName);
-                    continue;
+                    throw;
+                }
+                // protect user's account by respecting TooManyRequests error
+                else if (ex is HttpRequestException httpException && httpException.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    throw;
+                }
+                // retry if there are attempts remaining
+                if (retryCount < maxRetries)
+                {
+                    retryCount++;
+                    var delay = random.Next(minRetryDelay, maxRetryDelay);
+                    logger?.LogWarning(ex.GetBaseException(), "Download failed for file {file}. Attempting {retryCount} retry in {delay} milliseconds.", download.FileName, retryCount.DisplayWithSuffix(), delay);
+                    await Task.Delay(delay, token);
+                }
+                else
+                {
+                    logger?.LogError(ex.GetBaseException(), "Download failed for file {file}. No retries remaining.", download.FileName);
+                    throw;
                 }
             }
-
-            // download the file and write it to disk
-            token.ThrowIfCancellationRequested();
-            using (var downloadStream = await downloadClient.GetStreamAsync(url, token))
-            {
-                using var file = await downloadFolder.CreateFileAsync(fileName) ?? throw new UnauthorizedAccessException("Unable to create file in download folder.");
-                using var fileStream = await file.OpenWriteAsync();
-                await downloadStream.CopyToAsync(fileStream, token);
-                await fileStream.FlushAsync(token);
-            }
-
-            App.Logger.LogInformation("Downloaded file '{fileName}' succesfully.", fileName);
         }
     }
 
-    private void OnDownloading(int position, string fileName, ulong size) => Downloading?.Invoke(position, fileName, size);
+    /// <summary>
+    /// Download a single file and write it to disk
+    /// </summary>
+    private async Task DownloadFileAsync(NexusDownload download, IProgress<long>? progress, CancellationToken token)
+    {
+        // skip if file size exceeds size limit
+        if (download.FileSize > maxDownloadSize)
+        {
+            logger?.LogInformation("File {download.FileName} exceeds download limit: {download.FileSize} > {maxDownloadSize}. Skipping ahead.",
+                download.FileName, download.FileSize, maxDownloadSize);
+            return;
+        }
+        // skip if file already exists
+        if (existingFiles != null && existingFiles.TryGetValue(download.FileName, out long size) && size == download.FileSize)
+        {
+            logger?.LogInformation("File {download.FileName} already exists. Skipping ahead.", download.FileName);
+            return;
+        }
+
+        token.ThrowIfCancellationRequested();
+        // construct and send POST request to acquire download url
+        using var client = new HttpClient(handler, false);
+        client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
+
+        logger?.LogTrace("Sending HTTP POST request for file {file}.", download.FileName);
+        var request = ConstructRequest(download);
+        var response = await request.SendAsync(client, true, token);
+        var responseString = await response.ReadAsStringAsync(token);
+
+        // interpret download url and extract file name
+        string fileName;
+        string url;
+        try
+        {
+            var jsonResponse = JsonNode.Parse(responseString)!.AsObject();
+            url = jsonResponse["url"]!.ToString();
+            fileName = GetFileName(url);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidJsonResponseException($"Http response does not contain download url: {responseString}", ex);
+        }
+        
+        // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
+        if (download.FileName != fileName)
+        {
+            logger?.LogTrace("File {fileName} does not match wabbajack file name. Checking again if the file already exists.", fileName);
+
+            if (existingFiles != null && existingFiles.ContainsKey(fileName))
+            {
+                // there is no file size, so we have to fetch file size from download url
+                using var headerResponse = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
+                var sizeFromHeader = headerResponse.Content.Headers.ContentLength;
+                if (sizeFromHeader != null && sizeFromHeader == download.FileSize)
+                {
+                    logger?.LogInformation("File {fileName} already exists. Skipping ahead.", fileName);
+                    return;
+                }
+            }
+        }
+
+        token.ThrowIfCancellationRequested();
+        // download the file and write it to disk
+        logger?.LogTrace("Starting download for {file}...", download.FileName);
+        using var downloadStream = await client.GetStreamAsync(url, token);
+        using var inputStream = new ProgressStream(downloadStream, progress);
+        using var file = await downloadFolder.CreateFileAsync(fileName) ?? throw new UnauthorizedAccessException("Unable to create file in download folder.");
+        using var fileStream = await file.OpenWriteAsync();
+        if (checkHash)
+        {
+            var hash = await inputStream.HashingCopy(fileStream, token, bufferSize);
+            if (!hash.Equals(download.Hash))
+            {
+                logger?.LogError("Hash does not match pre-computed value for {fileName}.", fileName);
+                throw new HashMismatchException($"Hash does not match pre-computed value for {fileName}.\nExpected: {download.Hash}\nComputed: {hash}");
+            }
+            else
+                logger?.LogTrace("Verified hash for file {file}.", fileName);
+        }
+        else
+            await inputStream.CopyToAsync(fileStream, bufferSize, token);
+        await fileStream.FlushAsync(token);
+
+        logger?.LogInformation("Downloaded file {fileName} succesfully.", fileName);
+    }
 
     /// <summary>
     /// Scan the folder for existing files
     /// </summary>
-    private static async Task<Dictionary<string, ulong>> ScanDownloadFolder(IStorageFolder folder, string[] acceptedExtensions)
+    private async Task<Dictionary<string, long>> ScanFolderAsync(IStorageFolder folder)
     {
-        var results = new Dictionary<string, ulong>();
+        var results = new Dictionary<string, long>();
         var items = folder.GetItemsAsync();
+        logger?.LogTrace("Scanning folder {folder} for existing files.", folder.Name);
         await foreach (var item in items)
         {
             if (item is IStorageFile file)
@@ -154,7 +279,8 @@ internal class NexusDownloader : IDisposable
                 {
                     var properties = await file.GetBasicPropertiesAsync();
                     var size = properties.Size ?? 0;
-                    results.Add(name, size);
+                    results.Add(name, (long)size);
+                    logger?.LogTrace("Discovered file {name} with size {size}B.", name, size);
                 }
             }
         }
@@ -162,7 +288,7 @@ internal class NexusDownloader : IDisposable
     }
 
     /// <summary>
-    /// Construct a HTTP POST request for nexusmods.com
+    /// Construct a HTTP POST request for www.nexusmods.com
     /// </summary>
     private static HttpRequest ConstructRequest(NexusDownload download)
     {
@@ -202,10 +328,7 @@ internal class NexusDownloader : IDisposable
 
         // look for file name within base url
         dividerIndex = baseUrl.LastIndexOf('/');
-        if (dividerIndex == 1)
-            throw new InvalidHttpReponseException($"Unable to extract file name from url: {url}");
-        else
-            name = baseUrl[(dividerIndex + 1)..];
+        name = baseUrl[(dividerIndex + 1)..];
 
         return Uri.UnescapeDataString(name.ToString());
     }
@@ -224,8 +347,7 @@ internal class NexusDownloader : IDisposable
 
     public void Dispose()
     {
-        Downloading = null;
-        downloadClient.Dispose();
-        fetchClient.Dispose();
+        handler.Dispose();
+        semaphore.Dispose();
     }
 }

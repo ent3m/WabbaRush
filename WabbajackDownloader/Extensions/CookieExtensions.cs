@@ -3,11 +3,11 @@ using System.Net;
 using System.Text;
 using Xilium.CefGlue;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.Extensions;
 
-internal static class CookieHelper
+internal static class CookieExtensions
 {
-    internal static Cookie ConvertCefCookie(CefCookie cefCookie)
+    public static Cookie ConvertCookie(this CefCookie cefCookie)
     {
         var cookie = new Cookie()
         {
@@ -20,12 +20,12 @@ internal static class CookieHelper
         };
         if (cefCookie.Expires.HasValue)
         {
-            cookie.Expires = ConvertCefBaseTime(cefCookie.Expires.Value);
+            cookie.Expires = cefCookie.Expires.Value.ConvertBaseTime();
         }
         return cookie;
     }
 
-    internal static string ToString(Cookie cookie)
+    public static string ToString(this Cookie cookie)
     {
         var sb = new StringBuilder();
         sb.Append($"Name: {cookie.Name}");
@@ -40,7 +40,7 @@ internal static class CookieHelper
         return sb.ToString();
     }
 
-    internal static string ToString(CefCookie cookie)
+    public static string ToString(this CefCookie cookie)
     {
         var sb = new StringBuilder();
         sb.Append($"Name: {cookie.Name}");
@@ -49,14 +49,14 @@ internal static class CookieHelper
         sb.AppendLine($"Path: {cookie.Path}");
         sb.AppendLine($"Secure: {cookie.Secure}");
         sb.AppendLine($"HttpOnly: {cookie.HttpOnly}");
-        sb.AppendLine($"Creation: {ConvertCefBaseTime(cookie.Creation)}");
+        sb.AppendLine($"Creation: {cookie.Creation.ConvertBaseTime()}");
         if (cookie.Expires.HasValue)
-            sb.AppendLine($"Expires: {ConvertCefBaseTime(cookie.Expires.Value)}");
+            sb.AppendLine($"Expires: {cookie.Expires.Value.ConvertBaseTime()}");
         return sb.ToString();
     }
 
     // CefBaseTime represents a wall clock time in UTC. Time is stored internally as microseconds since the Windows epoch (1601).
-    internal static DateTime ConvertCefBaseTime(CefBaseTime cefTime)
+    public static DateTime ConvertBaseTime(this CefBaseTime cefTime)
     {
         // Treat a zero value as no time set.
         if (cefTime.Ticks == 0)

@@ -12,16 +12,14 @@ namespace WabbajackDownloader.Core;
 
 internal static class ModlistExtractor
 {
-    public static List<NexusDownload> ExtractDownloadLinks(Stream wabbajack)
+    public static List<NexusDownload> ExtractDownloadLinks(Stream wabbajack, ILogger? logger)
     {
         var downloads = new List<NexusDownload>();
         using var file = new ZipArchive(wabbajack, ZipArchiveMode.Read);
 
         // the archive should contain a file named "modlist"
-        var entry = file.GetEntry("modlist") ?? throw new InvalidDataException($"The archive does not contain a modlist.");
-        // modlist should be a valid json object
-        App.Logger.LogInformation("Extracting downloads from mod list...");
-
+        var entry = file.GetEntry("modlist") ?? throw new InvalidDataException("The wabbajack file does not contain a modlist.");
+        logger?.LogInformation("Extracting downloads from wabbajack file...");
         var modlist = JsonNode.Parse(entry.Open())?.AsObject();
         if (modlist != null)
         {
@@ -36,18 +34,18 @@ internal static class ModlistExtractor
                     // get the "Name" element that contains the file name
                     var name = archiveObject?["Name"]?.ToString() ?? archiveObject?["name"]?.ToString();
                     // get the "Size" element that contains the file size
-                    var size = ulong.Parse(archiveObject?["Size"]?.ToString() ?? archiveObject?["size"]?.ToString() ?? "0");
+                    var size = long.Parse(archiveObject?["Size"]?.ToString() ?? archiveObject?["size"]?.ToString() ?? "0");
                     // get the "Hash" element that contains the computed hash
                     var hash = archiveObject?["Hash"]?.ToString() ?? archiveObject?["hash"]?.ToString();
                     // get the "Meta" element that contains the game name, mod ID, and file ID
                     var meta = archiveObject?["Meta"]?.ToString() ?? archiveObject?["meta"]?.ToString();
                     if (name == null || hash == null || meta == null)
                     {
-                        App.Logger.LogTrace("Archive entry is not a nexus download. Skipping ahead.\n{entry}", archiveObject);
+                        logger?.LogTrace("This entry is not a nexus download. Skipping ahead.\nInvalid entry:\n{entry}", archiveObject);
                         continue;
                     }
 
-                    // try to extract game name, mod id, and file id
+                    // extract game name, mod id, and file id
                     if (ExtractValues(meta, out var gameName, out var modID, out var fileID))
                     {
                         if (GameData.GameLookup.TryGetValue(gameName, out var game))
@@ -55,22 +53,24 @@ internal static class ModlistExtractor
                             // add valid entry to list
                             var download = new NexusDownload(game, name, modID, fileID, size, Hash.Interpret(hash));
                             downloads.Add(download);
+                            logger?.LogTrace("Mod {name} is added to download.", name);
                         }
                     }
                     else
                     {
-                        App.Logger.LogTrace("Cannot extract game name, mod ID, and file ID from {meta}.", meta);
+                        logger?.LogTrace("Cannot extract game name, mod ID, and file ID from:\n{meta}.", meta);
                     }
                 }
             }
             else
             {
-                App.Logger.LogWarning("Cannot extract downloads from this mod list because it does not have an Archives entry.");
+                logger?.LogError("Cannot extract downloads from wabbajack file: no Archives entry found.");
             }
         }
         else
-            App.Logger.LogWarning("modlist is not a valid json object.");
+            logger?.LogError("Cannot extract downloads from wabbajack file: modlist is not a valid json object.");
 
+        logger?.LogInformation("Extracted {count} downloadable mods from modlist.", downloads.Count);
         return downloads;
     }
 

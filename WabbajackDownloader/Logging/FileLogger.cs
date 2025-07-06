@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Threading;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.Logging;
 
 internal class FileLoggerProvider : ILoggerProvider
 {

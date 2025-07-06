@@ -10,7 +10,9 @@ using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using WabbajackDownloader.Configuration;
 using WabbajackDownloader.Core;
+using WabbajackDownloader.Exceptions;
 
 namespace WabbajackDownloader.Views;
 
@@ -42,21 +44,29 @@ public partial class MainWindow : Window
     private const int maxRetry = 10;
 
     private readonly AppSettings settings;
+    private readonly ILoggerProvider? loggerProvider;
+    private readonly ILogger? logger;
 
     private List<NexusDownload>? downloads;
     private CookieContainer? container;
     private IStorageFolder? downloadFolder;
     private readonly CancellationTokenSource downloadTokenSource = new();
 
-    private int currentPos;
-    private int retryCount;
-    private const int maxRetryCount = 3;
+#if DEBUG
+    // parameterless constructor for xaml previewer
+    public MainWindow() : this(AppSettings.GetDefaultSettings(), null)
+    {
+        
+    }
+#endif
 
-    public MainWindow()
+    public MainWindow(AppSettings? settings, ILoggerProvider? loggerProvider)
     {
         InitializeComponent();
 
-        settings = App.Settings;
+        this.settings = settings ?? AppSettings.GetDefaultSettings();
+        this.loggerProvider = loggerProvider;
+        logger = loggerProvider?.CreateLogger(nameof(MainWindow));
         ToolTip.SetTip(bannerButton, repoUri);
         maxSizeBox.Minimum = minDownloadSize;
         maxSizeBox.Maximum = maxDownloadSize;
@@ -85,7 +95,6 @@ public partial class MainWindow : Window
         var file = await StorageProvider.TryGetFileFromPathAsync(filePath);
         if (file != null)
         {
-            fileText.Text = filePath;
             await ExtractDownloads(file);
         }
         else
@@ -95,7 +104,7 @@ public partial class MainWindow : Window
 
         maxSizeBox.Value = Math.Clamp(settings.MaxDownloadSize, minDownloadSize, maxDownloadSize);
         maxDownloadBox.Value = Math.Clamp(settings.MaxConcurrentDownload, minConcurrentDownload, maxConcurrentDownload);
-        maxRetryBox.Value = Math.Clamp(settings.MaxRetry, minRetry, maxRetry);
+        maxRetryBox.Value = Math.Clamp(settings.MaxRetries, minRetry, maxRetry);
 
         // wire up observables
         var maxDownloadSizeValue = maxSizeBox.GetObservable(Slider.ValueProperty);
@@ -112,7 +121,7 @@ public partial class MainWindow : Window
         maxRetryValue.Subscribe(new AnonymousObserver<decimal?>(value =>
         {
             if (value.HasValue)
-                settings.MaxRetry = decimal.ConvertToInteger<int>(value.Value);
+                settings.MaxRetries = decimal.ConvertToInteger<int>(value.Value);
         }));
 
         base.OnOpened(e);
@@ -130,47 +139,49 @@ public partial class MainWindow : Window
     {
         var file = await StorageProvider.OpenFilePickerAsync(wabbajackFilePickerOptions);
         if (file.Count == 0) return;
+
         var storageFile = file[0];
-        var filePath = storageFile.TryGetLocalPath() ?? storageFile.Path.ToString();
-        fileText.Text = settings.WabbajackFile = filePath;
         await ExtractDownloads(storageFile);
-        EnableDownloadButton();
     }
 
-    private async Task ExtractDownloads(IStorageFile storageFile)
+    /// <summary>
+    /// Extract downloadable mods from wabbajack file
+    /// </summary>
+    private async Task ExtractDownloads(IStorageFile wabbajackFile)
     {
         try
         {
-            using var stream = await storageFile.OpenReadAsync();
-            downloads = ModlistExtractor.ExtractDownloadLinks(stream);
-
-            if (downloads != null)
-            {
-                downloadProgressBar.Maximum = downloads.Count;
-                downloadProgressBar.IsVisible = true;
-            }
+            downloads = null;
+            using var stream = await wabbajackFile.OpenReadAsync();
+            var extractions = ModlistExtractor.ExtractDownloadLinks(stream, loggerProvider?.CreateLogger(nameof(ModlistExtractor)));
+            if (extractions.Count == 0)
+                throw new Exception("The selected wabbajack file does not contain any downloadable mods.");
             else
             {
-                downloadProgressBar.IsVisible = false;
+                var filePath = wabbajackFile.TryGetLocalPath() ?? wabbajackFile.Path.ToString();
+                fileText.Text = settings.WabbajackFile = filePath;
+                downloads = extractions;
             }
         }
         catch (Exception ex)
         {
-            App.Logger.LogCritical(ex.GetBaseException(), "Unable to extract mods from wabbajack file {settings.WabbajackFile}.", settings.WabbajackFile);
+            logger?.LogError(ex, "Unable to extract download links from wabbajack file.");
+            infoText.Text = "Unable to extract download links from wabbajack file. Check log for more info.";
+            fileText.Text = selectFileMessage;
         }
     }
 
     /// <summary>
-    /// Let the user choose download folder
+    /// Let the user choose a download folder
     /// </summary>
     private async void OpenDownloadFolderPicker(object sender, RoutedEventArgs args)
     {
         var folder = await StorageProvider.OpenFolderPickerAsync(downloadFolderPickerOptions);
         if (folder.Count == 0) return;
+
         downloadFolder = folder[0];
         var folderPath = downloadFolder.TryGetLocalPath() ?? downloadFolder.Path.ToString();
         folderText.Text = settings.DownloadFolder = folderPath;
-        EnableDownloadButton();
     }
 
     /// <summary>
@@ -178,90 +189,86 @@ public partial class MainWindow : Window
     /// </summary>
     private async void DisplaySigninWindow(object sender, RoutedEventArgs args)
     {
-        using var signinWindow = new NexusSigninWindow();
-        // set this so that any popup can attach to signin window's lifespan
-        // if we don't then it will be attached to main window's lifespan instead
-        App.SigninWindow = signinWindow;
+        using var signinWindow = new NexusSigninWindow(settings.NexusLandingPage, loggerProvider?.CreateLogger(nameof(NexusSigninWindow)));
         container = await signinWindow.ShowAndGetCookiesAsync(this);
-        // get rid of the reference to signin window so that it can be disposed
-        App.SigninWindow = null;
-
-        App.Logger.LogInformation("Cookies added: {count}.", container.Count);
-        App.Logger.LogInformation("Cookie header: {header}", container.GetCookieHeader(new Uri("https://www.nexusmods.com/Core/Libs/Common/Managers/Downloads?GenerateDownloadUrl")));
-        
-        EnableDownloadButton();
     }
-
-    /// <summary>
-    /// Check if conditions are satisfied to begin download. If not then disable it
-    /// </summary>
-    private bool EnableDownloadButton() => downloadButton.IsEnabled = downloads != null && container != null && downloadFolder != null;
 
     /// <summary>
     /// Begin downloading mods
     /// </summary>
     private async void DownloadFiles(object sender, RoutedEventArgs args)
     {
-        // ready check
-        downloadDoneIcon.IsVisible = false;
+        // save settings before download
+        settings.SaveSettings();
 
-        if (container == null || container.Count == 0)
-        {
-            infoText.Text = "Unable to acquire user credentials. Please login to your nexus account.";
-            return;
-        }
+        // ready check
         if (downloadFolder == null)
         {
-            infoText.Text = "Unable to locate download folder. Please enter a valid path.";
+            infoText.Text = "Please select a download folder.";
             folderText.Text = selectFolderMessage;
             return;
         }
-        if (downloads == null || downloads.Count == 0)
+        if (downloads == null)
         {
-            infoText.Text = "Unable to find any downloadable mods from the selected wabbajack file.";
+            infoText.Text = "Please select a wabbajack file.";
             fileText.Text = selectFileMessage;
+            return;
+        }
+        if (container == null)
+        {
+            infoText.Text = "Please login to your nexus account.";
             return;
         }
 
         // prepare downloader
-        var downloader = new NexusDownloader(downloadFolder, downloads, container);
-        downloader.Downloading += UpdateDownloadProgress;
+        var downloader = new NexusDownloader(downloadFolder, downloads, container,
+            settings.MaxDownloadSize, settings.BufferSize, settings.MaxRetries,
+            settings.MinRetryDelay, settings.MaxRetryDelay, settings.CheckHash,
+            settings.MaxConcurrentDownload, settings.UserAgent, 
+            settings.DiscoverExistingFiles,
+            loggerProvider?.CreateLogger(nameof(NexusDownloader)),
+            new Progress<int>(UpdateDownloadProgress), 
+            new ProgressPool(progressContainer));
 
         // disable controls
         folderPickerButton.IsEnabled = false;
         filePickerButton.IsEnabled = false;
         loginButton.IsEnabled = false;
-        optionsBox.IsExpanded = false;
         optionsBox.IsEnabled = false;
         downloadButton.IsEnabled = false;
 
-        // prepare variables
-        currentPos = 0;
-        retryCount = 0;
+        optionsBox.IsExpanded = false;
+        downloadProgressBar.Maximum = downloads.Count;
+        progressContainer.IsVisible = true;
+
         try
         {
-            await downloader.DownloadFilesAsync(0, downloadTokenSource.Token);
+            infoText.Text = "Downloading...";
+            await downloader.DownloadAsync(downloadTokenSource.Token);
             infoText.Text = "All done!";
-            downloadDoneIcon.IsVisible = true;
         }
-        catch (TaskCanceledException)
+        catch (OperationCanceledException ex)
         {
-            infoText.Text = "Download is cancelled by the user.";
+            logger?.LogInformation(ex, "Download process has been canceled.");
         }
-        catch (InvalidOperationException)
+        catch (InvalidJsonResponseException ex)
         {
-            infoText.Text = $"Try logging in again.\n{typeof(InvalidOperationException)}";
+            logger?.LogError(ex, "Download process has stopped due to invalid or missing credentials.");
+            infoText.Text = "Cannot download from Nexusmods due to invalid or missing credentials. Please login again.";
             container = null;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
-            infoText.Text = $"Select another download folder.\n{typeof(UnauthorizedAccessException)}";
+            logger?.LogError(ex, "Download process has stopped due to insufficient privileges.");
+            infoText.Text = "Unable to access download folder due to insufficient privileges. Please select another folder.";
             downloadFolder = null;
             folderText.Text = selectFolderMessage;
         }
         catch (Exception ex)
         {
-            infoText.Text = $"{ex.GetBaseException()}";
+            logger?.LogError(ex, "Download process has stopped due to an exception.");
+            var exceptionName = ex.GetType().Name;
+            infoText.Text = $"Download has failed due to {exceptionName}. Check log for more info.";
         }
         finally
         {
@@ -272,78 +279,20 @@ public partial class MainWindow : Window
             loginButton.IsEnabled = true;
             optionsBox.IsEnabled = true;
             downloadButton.IsEnabled = true;
+            progressContainer.IsVisible = false;
         }
     }
 
-    /// <summary>
-    /// Run on a recursive loop if autoRetry is true. Max recursive layer = maxRetryCount
-    /// </summary>
-    private async Task DownloadFilesCore(NexusDownloader downloader, int position)
+    protected void UpdateDownloadProgress(int i)
     {
-        try
-        {
-            await downloader.DownloadFilesAsync(position, downloadTokenSource.Token);
-        }
-        catch (Exception ex) when (ex is TaskCanceledException or InvalidOperationException or UnauthorizedAccessException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            if (retryCount < maxRetryCount)
-            {
-                // we're stuck in the same position, so we increase retry count
-                if (downloader.Position == currentPos)
-                    retryCount++;
-                // we moved on to a new position since the last retry. reset retry count
-                else
-                    retryCount = 0;
-
-                App.Logger.LogCritical(ex.GetBaseException(), "Download failed. Attempting again for the {retryCount}th time.", retryCount);
-                // attempt to download again from the failed position
-                currentPos = downloader.Position;
-                await DownloadFilesCore(downloader, currentPos);
-            }
-            else
-            {
-                App.Logger.LogError(ex.GetBaseException(), "Download failed. No retry remaining.");
-                throw;
-            }
-        }
-    }
-
-    private void UpdateDownloadProgress(int position, string fileName, ulong size)
-    {
-        downloadProgressBar.Value = position + 1;
-        (var value, var suffix) = FileSizeFormatter(size);
-        infoText.Text = $"{fileName} ({value} {suffix})";
-    }
-
-    private readonly static string[] sizeSuffixes = ["KB", "MB", "GB", "TB"];
-    private static (string, string) FileSizeFormatter(ulong bytes)
-    {
-        if (bytes < 0)
-            return ("NaN", string.Empty);
-
-        if (bytes < 1024)
-            return ($"{bytes}", "B");
-
-        double size = bytes;
-        int order = -1;
-        do
-        {
-            size /= 1024;
-            order++;
-        }
-        while (size > 1024 && order < sizeSuffixes.Length - 1);
-
-        return ($"{size:0.#}", $"{sizeSuffixes[order]}");
+        downloadProgressBar.Value = i;
     }
 
     // Cancel ongoing downloads before closing
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         downloadTokenSource.Cancel();
+        downloadTokenSource.Dispose();
         base.OnClosing(e);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.Configuration;
 
 [JsonSourceGenerationOptions(WriteIndented = true)]
 [JsonSerializable(typeof(AppSettings))]

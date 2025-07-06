@@ -2,7 +2,7 @@
 using System;
 using System.Diagnostics;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.Logging;
 
 internal class DebugLoggerProvider : ILoggerProvider
 {

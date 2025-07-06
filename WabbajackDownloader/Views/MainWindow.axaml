@@ -77,7 +77,6 @@
       <Style Selector="Button.picker">
         <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        <Setter Property="Grid.Column" Value="1"/>
         <Style Selector="^ TextBlock">
           <Setter Property="Grid.Column" Value="1"/>
         </Style>
@@ -119,6 +118,7 @@
     
     <StackPanel Orientation="Vertical"
                 Spacing="10">
+      
       <!-- Banner with hyperlink button -->
       <Button Click="OpenRepo"
               BorderThickness="0"
@@ -140,108 +140,105 @@
         </StackPanel>
       </Button>
 
-      <!-- File selection controls -->
       <Grid ColumnDefinitions="*,4*,*">
-        <Button Name="filePickerButton"
-                Click="OpenWabbajackFilePicker"
-                Classes="picker">
-          <Grid ColumnDefinitions="30,*,30"
-                Width="{Binding $parent.Bounds.Width}">
-            <TextBlock Name="fileText"/>
-            <Image/>
-          </Grid>
-        </Button>
-      </Grid>
+        <StackPanel Orientation="Vertical"
+                    Spacing="10"
+                    Grid.Column="1">
+          
+          <!-- File selection controls -->
+          <Button Name="filePickerButton"
+                  Click="OpenWabbajackFilePicker"
+                  Classes="picker">
+            <Grid ColumnDefinitions="30,*,30"
+                  Width="{Binding $parent.Bounds.Width}">
+              <TextBlock Name="fileText"/>
+              <Image/>
+            </Grid>
+          </Button>
 
-      <!-- Folder selection controls -->
-      <Grid ColumnDefinitions="*,4*,*">
-        <Button Name="folderPickerButton"
-                Click="OpenDownloadFolderPicker"
-                Classes="picker">
-          <Grid ColumnDefinitions="30,*,30"
-                Width="{Binding $parent.Bounds.Width}">
-            <TextBlock Name="folderText"/>
-            <Image/>
-          </Grid>
-        </Button>
-      </Grid>
+          <!-- Folder selection controls -->
+          <Button Name="folderPickerButton"
+                  Click="OpenDownloadFolderPicker"
+                  Classes="picker">
+            <Grid ColumnDefinitions="30,*,30"
+                  Width="{Binding $parent.Bounds.Width}">
+              <TextBlock Name="folderText"/>
+              <Image/>
+            </Grid>
+          </Button>
 
-      <!-- Nexus login -->
-      <Button Name="loginButton" 
-              Click="DisplaySigninWindow"
-              Width="{Binding #downloadButton.Bounds.Width}">
-        <StackPanel HorizontalAlignment="Center">
-          <Image Source="/Assets/nexus.png"/>
-          <TextBlock Text="Login"/>
-        </StackPanel>
-      </Button>
+          <!-- Nexus login -->
+          <Button Name="loginButton"
+                  Click="DisplaySigninWindow"
+                  Width="{Binding #downloadButton.Bounds.Width}">
+            <StackPanel HorizontalAlignment="Center">
+              <Image Source="/Assets/nexus.png"/>
+              <TextBlock Text="Login"/>
+            </StackPanel>
+          </Button>
 
-      <!-- Expandable options -->
-      <Grid ColumnDefinitions="*,4*,*">
-        <Expander Name="optionsBox"
-                  Grid.Column="1"
-                  HorizontalAlignment="Stretch"
-                  BorderBrush="{StaticResource MainColor}"
-                  Background="{StaticResource BackgroundColor}"
-                  MinHeight="37"
-                  Header="Options">
-          <StackPanel HorizontalAlignment="Center"
-                      Orientation="Vertical">
-            <!-- Max download size -->
-            <StackPanel Orientation="Vertical">
-              <StackPanel HorizontalAlignment="Center">
-                <TextBlock Text="Max Download Size:"/>
-                <TextBlock Text="{Binding #maxSizeBox.Value}"/>
-                <TextBlock Text="MB"/>
+          <!-- Expandable options -->
+          <Expander Name="optionsBox"
+                    Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    BorderBrush="{StaticResource MainColor}"
+                    Background="{StaticResource BackgroundColor}"
+                    MinHeight="37"
+                    Header="    Options">
+            <StackPanel HorizontalAlignment="Center"
+                        Orientation="Vertical">
+              <!-- Max download size -->
+              <StackPanel Orientation="Vertical">
+                <StackPanel HorizontalAlignment="Center">
+                  <TextBlock Text="Max Download Size:"/>
+                  <TextBlock Text="{Binding #maxSizeBox.Value}"/>
+                  <TextBlock Text="MB"/>
+                </StackPanel>
+                <Slider Name="maxSizeBox"
+                        TickFrequency="1"
+                        IsSnapToTickEnabled="True"/>
               </StackPanel>
-              <Slider Name="maxSizeBox"
-                      TickFrequency="1"
-                      IsSnapToTickEnabled="True"/>
+              <!-- Max concurrent download -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Max Download:"
+                           Width="100"
+                           TextAlignment="Center"/>
+                <NumericUpDown Name="maxDownloadBox"/>
+              </StackPanel>
+              <!-- Max retry -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Max Retry:"
+                           Width="100"
+                           TextAlignment="Center"/>
+                <NumericUpDown Name="maxRetryBox"/>
+              </StackPanel>
             </StackPanel>
-            <!-- Max concurrent download -->
-            <StackPanel HorizontalAlignment="Center">
-              <TextBlock Text="Max Download:"
-                         Width="100"
-                         TextAlignment="Center"/>
-              <NumericUpDown Name="maxDownloadBox"/>
+          </Expander>
+
+          <!-- Download button -->
+          <Button Name="downloadButton"
+                  Click="DownloadFiles">
+            <StackPanel>
+              <TextBlock Text="Download"/>
+              <Image Source="/Assets/download.png"/>
             </StackPanel>
-            <!-- Max retry -->
-            <StackPanel HorizontalAlignment="Center">
-              <TextBlock Text="Max Retry:"
-                         Width="100"
-                         TextAlignment="Center"/>
-              <NumericUpDown Name="maxRetryBox"/>
-            </StackPanel>
+          </Button>
+
+          <!-- Information and progress -->
+          <TextBlock Name="infoText"
+                     TextWrapping="WrapWithOverflow"/>
+          <StackPanel Name="progressContainer"
+                      Orientation="Vertical"
+                      IsVisible="False">
+            <ProgressBar Name="downloadProgressBar"
+                         Value="0"
+                         Maximum="0"
+                         ShowProgressText="True"
+                         ProgressTextFormat="{}{0}/{3} ({1:0}%)"/>
           </StackPanel>
-        </Expander>
+
+        </StackPanel>
       </Grid>
-
-      <!-- Download button -->
-      <Button Name="downloadButton" 
-              Click="DownloadFiles" 
-              IsEnabled="False">
-        <StackPanel>
-          <TextBlock Text="Download"/>
-          <Image Source="/Assets/download.png"/>
-        </StackPanel>
-      </Button>
-
-      <!-- Information and progress -->
-      <StackPanel Orientation="Vertical">
-        <StackPanel HorizontalAlignment="Center">
-          <TextBlock Name="infoText"/>
-          <Image Name="downloadDoneIcon"
-                 Source="/Assets/download-done.png"
-                 IsVisible="False"/>
-        </StackPanel>
-        <ProgressBar Name="downloadProgressBar"
-                     IsVisible="False"
-                     Value="0"
-                     Maximum="0"
-                     ShowProgressText="True"
-                     ProgressTextFormat="{}{0}/{3} ({1:0}%)"
-                     Width="300"/>
-      </StackPanel>
     </StackPanel>
   </Panel>
 

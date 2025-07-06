@@ -5,45 +5,41 @@ using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
-using WabbajackDownloader.Core;
 using WabbajackDownloader.Views;
 using Xilium.CefGlue;
 using Xilium.CefGlue.Common;
+using WabbajackDownloader.Logging;
+using WabbajackDownloader.Configuration;
 
 namespace WabbajackDownloader
 {
     public partial class App : Application
     {
-#pragma warning disable CS8618 
-        public static AppSettings Settings { get; private set; } // created in Initialize()
-        public static ILogger Logger { get; private set; } // created in Initialize()
-        public static Window MainWindow { get; private set; } // created in OnFrameworkInitializationCompleted()
+#pragma warning disable CS8618 // these are created in Initialize()
+        private AppSettings settings;
+        private ILoggerProvider loggerProvider;
 #pragma warning restore CS8618
-        public static Window? SigninWindow { get; set; }
 
         public override void Initialize()
         {
             // load app settings
             var settingsPath = Path.Combine(AppContext.BaseDirectory, "settings.json");
-            Settings = AppSettings.LoadSettings(settingsPath);
+            settings = AppSettings.LoadOrGetDefaultSettings(settingsPath);
 
-            // manage cef settings
+            // manage cef logging
             CefRuntimeLoader.Initialize(new CefSettings()
             {
                 LogFile = Path.Combine(Directory.GetCurrentDirectory(), "cef-debug.log"),
-                LogSeverity = Settings.CefLogLevel
+                LogSeverity = settings.CefLogLevel
             });
 
             // configure logging
 #if DEBUG
-            var factory = new DebugLoggerProvider();
-            Logger = factory.CreateLogger("WabbajackDownloader");
+            loggerProvider = new DebugLoggerProvider();
 #else
             var logPath = Path.Combine(AppContext.BaseDirectory, "debug.log");
-            var factory = new FileLoggerProvider(logPath, Settings.LogLevel);
-            Logger = factory.CreateLogger("WabbajackDownloader");
+            loggerProvider = new FileLoggerProvider(logPath, settings.LogLevel);
 #endif
-
             AvaloniaXamlLoader.Load(this);
         }
 
@@ -51,9 +47,10 @@ namespace WabbajackDownloader
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var window = new MainWindow();
+                var window = new MainWindow(settings, loggerProvider);
                 desktop.MainWindow = window;
-                MainWindow = window;
+                // save user settings to file when app shuts down
+                desktop.ShutdownRequested += (_, _) => settings.SaveSettings();
             }
 
             base.OnFrameworkInitializationCompleted();

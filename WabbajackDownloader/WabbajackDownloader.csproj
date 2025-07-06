@@ -10,6 +10,7 @@
   <PropertyGroup Label="ApplicationConfiguration">
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\wabbajack.ico</ApplicationIcon>
+    <RepositoryType>https://github.com/ent3m/WabbajackDownloader</RepositoryType>
   </PropertyGroup>
 
   <PropertyGroup Label="PublishConfiguration" Condition="'$(Configuration)'=='Release'">

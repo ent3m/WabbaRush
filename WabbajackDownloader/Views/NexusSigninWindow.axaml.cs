@@ -5,7 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
-using WabbajackDownloader.Core;
+using WabbajackDownloader.Extensions;
 using Xilium.CefGlue;
 using Xilium.CefGlue.Avalonia;
 using Xilium.CefGlue.Common.Handlers;
@@ -17,16 +17,26 @@ public partial class NexusSigninWindow : Window, IDisposable
     private const string loginPage = "https://users.nexusmods.com/auth/sign_in?redirect_url=";
     private readonly AvaloniaCefBrowser browser;
     private readonly TaskCompletionSource<CookieContainer> tcs = new();
+    private readonly ILogger? logger;
 
-    public NexusSigninWindow()
+#if DEBUG
+    // parameterless constructor for xaml previewer
+    public NexusSigninWindow() : this(string.Empty, null)
+    {
+        
+    }
+#endif
+
+    public NexusSigninWindow(string nexusLandingPage, ILogger? logger)
     {
         InitializeComponent();
-
-        var address = loginPage + Uri.EscapeDataString(App.Settings.NexusLandingPage);
+        
+        this.logger = logger;
+        var address = loginPage + Uri.EscapeDataString(nexusLandingPage);
         browser = new AvaloniaCefBrowser(RequestContextFactory)
         {
             Address = address,
-            LifeSpanHandler = new PopupLifeSpanHandler(),
+            LifeSpanHandler = new PopupLifeSpanHandler(this),
             DownloadHandler = new DownloadNothingHandler(),
         };
         browser.LoadStart += OnBrowserLoadStart;
@@ -83,9 +93,16 @@ public partial class NexusSigninWindow : Window, IDisposable
     /// </summary>
     private void GetCookies()
     {
-        var manager = browser.RequestContext.GetCookieManager(null);
-        var visitor = new NexusCookieVisitor(manager, tcs);
-        visitor.GetCookies();
+        try
+        {
+            var manager = browser.RequestContext.GetCookieManager(null);
+            var visitor = new NexusCookieVisitor(manager, tcs, logger);
+            visitor.GetCookies();
+        }
+        catch (Exception ex)
+        {
+            logger?.LogCritical(ex, "Failed to get cookies from nexusmods.");
+        }
     }
 
     public void Dispose()
@@ -97,8 +114,10 @@ public partial class NexusSigninWindow : Window, IDisposable
     /// <summary>
     /// Launch popup in a separate window that shares its lifetime with the main window
     /// </summary>
-    private class PopupLifeSpanHandler : LifeSpanHandler
+    private class PopupLifeSpanHandler(Window parent) : LifeSpanHandler
     {
+        private readonly Window parentWindow = parent;
+
         protected override bool OnBeforePopup(CefBrowser browser, CefFrame frame, string targetUrl, string targetFrameName, CefWindowOpenDisposition targetDisposition,
             bool userGesture, CefPopupFeatures popupFeatures, CefWindowInfo windowInfo, ref CefClient client, CefBrowserSettings settings,
             ref CefDictionaryValue extraInfo, ref bool noJavascriptAccess)
@@ -109,7 +128,7 @@ public partial class NexusSigninWindow : Window, IDisposable
                 var popupBrowser = new AvaloniaCefBrowser
                 {
                     Address = targetUrl,
-                    LifeSpanHandler = new PopupLifeSpanHandler(),
+                    LifeSpanHandler = new PopupLifeSpanHandler(window),
                     DownloadHandler = new DownloadNothingHandler(),
                 };
                 window.Content = popupBrowser;
@@ -117,7 +136,7 @@ public partial class NexusSigninWindow : Window, IDisposable
                 window.Height = 270;
                 window.Width = 480;
                 window.Title = targetUrl;
-                window.Show(App.SigninWindow ?? App.MainWindow);
+                window.Show(parentWindow);
             });
             return true;
         }
@@ -135,29 +154,36 @@ public partial class NexusSigninWindow : Window, IDisposable
     /// <summary>
     /// Retrieve all cookies from nexusmods.com and signal the completion via the provided TaskCompletionSource
     /// </summary>
-    private class NexusCookieVisitor(CefCookieManager manager, TaskCompletionSource<CookieContainer> tcs) : CefCookieVisitor
+    private class NexusCookieVisitor(CefCookieManager manager, TaskCompletionSource<CookieContainer> tcs, ILogger? logger) : CefCookieVisitor
     {
         private readonly CefCookieManager manager = manager;
+        private readonly ILogger? logger = logger;
         private readonly CookieContainer container = new();
         private readonly TaskCompletionSource<CookieContainer> tcs = tcs;
 
         public void GetCookies()
         {
             if (!manager.VisitAllCookies(this))
-                throw new AccessViolationException("Unable to access cookies.");
+            {
+                var exception = new AccessViolationException("Unable to access cookies.");
+                logger?.LogCritical(exception, "Cannot access cookies of {manager}.", manager);
+                throw exception;
+            }
         }
 
         protected override bool Visit(CefCookie cookie, int count, int total, out bool deleteCookie)
         {
-            var convertedCookie = CookieHelper.ConvertCefCookie(cookie);
+            var convertedCookie = cookie.ConvertCookie();
             container.Add(convertedCookie);
 
-            App.Logger.LogTrace("Added cookie No. {count}/{total}:\n{cookie}", count + 1, total, CookieHelper.ToString(convertedCookie));
+            logger?.LogTrace("Added cookie No. {count}/{total}:\n{cookie}", count + 1, total, convertedCookie.ToString());
 
             deleteCookie = false;
             // cookies finish enumerating when count == total -1 or when returning false
             if (count == total - 1)
             {
+                logger?.LogInformation("Added {count} cookies to container.", container.Count);
+                logger?.LogTrace("Cookie header: {header}", container.GetCookieHeader(new Uri("https://www.nexusmods.com/Core/Libs/Common/Managers/Downloads?GenerateDownloadUrl")));
                 tcs.SetResult(container);
                 return false;
             }
