@@ -48,8 +48,6 @@ namespace WabbajackDownloader
             {
                 var window = new MainWindow(settings, loggerProvider);
                 desktop.MainWindow = window;
-                // save user settings to file when app shuts down
-                desktop.ShutdownRequested += (_, _) => settings.SaveSettings();
             }
 
             base.OnFrameworkInitializationCompleted();

@@ -15,15 +15,18 @@ internal class ProgressPool(Panel panel) : IDisposable
     private readonly ConcurrentBag<ProgressDisplay<long>> bag = [];
     private readonly SynchronizationContext synchronizationContext = SynchronizationContext.Current ?? new SynchronizationContext();
     private ProgressDisplay<long>? fetchedProgress;
+    private readonly Lock lockObject = new();
 
     /// <summary>
     /// Rent a progress display for a specific download
     /// </summary>
     public ProgressDisplay<long> Get(NexusDownload download)
     {
-        fetchedProgress = null;
-        synchronizationContext.Send(FetchOrCreateProgress, download);
-        return fetchedProgress!;
+        lock (lockObject)
+        {
+            synchronizationContext.Send(FetchOrCreateProgress, download);
+            return fetchedProgress!;
+        }
     }
 
     /// <summary>

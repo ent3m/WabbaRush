@@ -292,6 +292,7 @@ public partial class MainWindow : Window
     {
         downloadTokenSource.Cancel();
         downloadTokenSource.Dispose();
+        settings.SaveSettings();
         base.OnClosing(e);
     }
 }

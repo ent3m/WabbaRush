@@ -346,5 +346,6 @@ internal class NexusDownloader : IDisposable
     {
         handler.Dispose();
         semaphore.Dispose();
+        progressPool?.Dispose();
     }
 }
