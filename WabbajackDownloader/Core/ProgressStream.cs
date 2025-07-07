@@ -66,22 +66,22 @@ internal class ProgressStream(Stream innerStream, IProgress<long>? progress) : S
         set => innerStream.Position = value;
     }
 
-    public override Task FlushAsync(CancellationToken cancellationToken) 
+    public override Task FlushAsync(CancellationToken cancellationToken)
         => innerStream.FlushAsync(cancellationToken);
 
     public override void Flush()
         => innerStream.Flush();
 
-    public override long Seek(long offset, SeekOrigin origin) 
+    public override long Seek(long offset, SeekOrigin origin)
         => innerStream.Seek(offset, origin);
 
-    public override void SetLength(long value) 
+    public override void SetLength(long value)
         => innerStream.SetLength(value);
 
     public override void Write(ReadOnlySpan<byte> buffer)
         => innerStream.Write(buffer);
 
-    public override void Write(byte[] buffer, int offset, int count) 
+    public override void Write(byte[] buffer, int offset, int count)
         => innerStream.Write(buffer, offset, count);
 
     public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)

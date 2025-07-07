@@ -2,7 +2,6 @@ using Avalonia.Controls;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Diagnostics;
 using System.Net;
 using System.Threading.Tasks;
 using WabbajackDownloader.Extensions;
@@ -23,14 +22,14 @@ public partial class NexusSigninWindow : Window, IDisposable
     // parameterless constructor for xaml previewer
     public NexusSigninWindow() : this(string.Empty, null)
     {
-        
+
     }
 #endif
 
     public NexusSigninWindow(string nexusLandingPage, ILogger? logger)
     {
         InitializeComponent();
-        
+
         this.logger = logger;
         var address = loginPage + Uri.EscapeDataString(nexusLandingPage);
         browser = new AvaloniaCefBrowser(RequestContextFactory)
@@ -114,9 +113,9 @@ public partial class NexusSigninWindow : Window, IDisposable
     /// <summary>
     /// Launch popup in a separate window that shares its lifetime with the main window
     /// </summary>
-    private class PopupLifeSpanHandler(Window parent) : LifeSpanHandler
+    private class PopupLifeSpanHandler(Window owner) : LifeSpanHandler
     {
-        private readonly Window parentWindow = parent;
+        private readonly Window owner = owner;
 
         protected override bool OnBeforePopup(CefBrowser browser, CefFrame frame, string targetUrl, string targetFrameName, CefWindowOpenDisposition targetDisposition,
             bool userGesture, CefPopupFeatures popupFeatures, CefWindowInfo windowInfo, ref CefClient client, CefBrowserSettings settings,
@@ -136,7 +135,7 @@ public partial class NexusSigninWindow : Window, IDisposable
                 window.Height = 270;
                 window.Width = 480;
                 window.Title = targetUrl;
-                window.Show(parentWindow);
+                window.Show(owner);
             });
             return true;
         }

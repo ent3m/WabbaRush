@@ -32,7 +32,7 @@ public readonly struct Hash(ulong code) : IEquatable<Hash>, IComparable<Hash>
 
     public override int GetHashCode()
     {
-        return (int) (_code >> 32) ^ (int) _code;
+        return (int)(_code >> 32) ^ (int)_code;
     }
 
     public static bool operator ==(Hash a, Hash b)

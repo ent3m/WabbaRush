@@ -3,7 +3,6 @@ using System.Buffers;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using WabbajackDownloader.Hashing;
 
 namespace WabbajackDownloader.Hashing;
 
@@ -71,7 +70,7 @@ public static class StreamExtensions
 
         return new Hash(finalHash);
     }
-    
+
     public static async Task<Hash> HashingCopy(this Stream inputStream, Func<Memory<byte>, Task> fn,
         CancellationToken token)
     {
@@ -90,7 +89,7 @@ public static class StreamExtensions
             {
                 var read = await inputStream.ReadAsync(buffer[totalRead..],
                     token);
-                
+
                 if (read == 0)
                 {
                     running = false;
@@ -121,7 +120,7 @@ public static class StreamExtensions
                 break;
             }
         }
-        
+
         return new Hash(finalHash);
     }
 
@@ -142,9 +141,9 @@ public static class StreamExtensions
             _src = src;
             _hasher = new HashAlgorithm(0);
         }
-        
+
         public Hash Hash => new(_hash ?? throw new InvalidOperationException("Hash not yet computed"));
-        
+
         public override long Seek(long offset, SeekOrigin origin)
         {
             throw new NotImplementedException();
@@ -179,14 +178,14 @@ public static class StreamExtensions
         {
             if (_hash.HasValue)
                 throw new InvalidDataException("HashingPull can only be read once");
-            
+
             var sized = count >> 5 << 5;
             if (sized == 0)
                 throw new ArgumentException("count must be a multiple of 32, got " + count, nameof(count));
-            
-            
+
+
             var read = _src.ReadAtLeast(buffer, sized);
-            
+
             if (read == 0)
                 return 0;
 

@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.IO;
 using System.Text.Json;
-using System.Threading.Tasks;
-using WabbajackDownloader.Core;
 using Xilium.CefGlue;
 
 namespace WabbajackDownloader.Configuration;

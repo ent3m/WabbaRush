@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
-using System.Threading;
-using System.Threading.Tasks;
 using WabbajackDownloader.Hashing;
 
 namespace WabbajackDownloader.Core;

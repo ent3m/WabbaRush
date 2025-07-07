@@ -102,7 +102,7 @@ public struct HashAlgorithm
         _c = tempC;
         _d = tempD;
 
-        _bytesProcessed += (ulong) data.Length;
+        _bytesProcessed += (ulong)data.Length;
     }
 
 
@@ -160,7 +160,7 @@ public struct HashAlgorithm
 
         var remainderLength = data.Length;
 
-        hashValue += _bytesProcessed + (ulong) remainderLength;
+        hashValue += _bytesProcessed + (ulong)remainderLength;
 
         if (remainderLength > 0)
         {

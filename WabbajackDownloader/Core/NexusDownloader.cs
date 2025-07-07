@@ -2,19 +2,16 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using WabbajackDownloader.Extensions;
 using WabbajackDownloader.Exceptions;
+using WabbajackDownloader.Extensions;
 using WabbajackDownloader.Hashing;
 using WabbajackDownloader.Http;
-using System.Runtime.CompilerServices;
 
 namespace WabbajackDownloader.Core;
 
@@ -42,7 +39,7 @@ internal class NexusDownloader : IDisposable
     private readonly SemaphoreSlim semaphore;
 
     public NexusDownloader(IStorageFolder downloadFolder, IReadOnlyList<NexusDownload> downloads, CookieContainer cookieContainer,
-        int maxDownloadSize, int bufferSize, int maxRetries, int minRetryDelay, int maxRetryDelay, bool checkHash, 
+        int maxDownloadSize, int bufferSize, int maxRetries, int minRetryDelay, int maxRetryDelay, bool checkHash,
         int maxConcurrentDownload, string userAgent, bool discoverExistingFiles, ILogger? logger,
         IProgress<int>? downloadProgress, ProgressPool? progressPool)
     {
@@ -75,7 +72,7 @@ internal class NexusDownloader : IDisposable
             existingFiles = await ScanFolderAsync(downloadFolder).ConfigureAwait(false);
             logger?.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder.Path);
         }
-        
+
         // creates a wrapper around the original token so that we can cancel all download tasks
         using var linkedTokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
         var linkedToken = linkedTokenSource.Token;
@@ -217,7 +214,7 @@ internal class NexusDownloader : IDisposable
         {
             throw new InvalidJsonResponseException($"Http response does not contain download url: {responseString}", ex);
         }
-        
+
         // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
         if (download.FileName != fileName)
         {

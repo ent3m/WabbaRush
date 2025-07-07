@@ -1,15 +1,14 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using WabbajackDownloader.Configuration;
+using WabbajackDownloader.Logging;
 using WabbajackDownloader.Views;
 using Xilium.CefGlue;
 using Xilium.CefGlue.Common;
-using WabbajackDownloader.Logging;
-using WabbajackDownloader.Configuration;
 
 namespace WabbajackDownloader
 {

@@ -6,7 +6,6 @@ using Avalonia.Reactive;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -56,7 +55,7 @@ public partial class MainWindow : Window
     // parameterless constructor for xaml previewer
     public MainWindow() : this(AppSettings.GetDefaultSettings(), null)
     {
-        
+
     }
 #endif
 
@@ -224,10 +223,10 @@ public partial class MainWindow : Window
         var downloader = new NexusDownloader(downloadFolder, downloads, container,
             settings.MaxDownloadSize, settings.BufferSize, settings.MaxRetries,
             settings.MinRetryDelay, settings.MaxRetryDelay, settings.CheckHash,
-            settings.MaxConcurrentDownload, settings.UserAgent, 
+            settings.MaxConcurrentDownload, settings.UserAgent,
             settings.DiscoverExistingFiles,
             loggerProvider?.CreateLogger(nameof(NexusDownloader)),
-            new Progress<int>(UpdateDownloadProgress), 
+            new Progress<int>(UpdateDownloadProgress),
             new ProgressPool(progressContainer));
 
         // disable controls
