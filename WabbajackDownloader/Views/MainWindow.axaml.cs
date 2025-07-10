@@ -6,6 +6,7 @@ using Avalonia.Reactive;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -46,9 +47,7 @@ public partial class MainWindow : Window
     private readonly ILoggerProvider? loggerProvider;
     private readonly ILogger? logger;
 
-    private List<NexusDownload>? downloads;
     private CookieContainer? container;
-    private IStorageFolder? downloadFolder;
     private readonly CancellationTokenSource downloadTokenSource = new();
 
 #if DEBUG
@@ -59,11 +58,11 @@ public partial class MainWindow : Window
     }
 #endif
 
-    public MainWindow(AppSettings? settings, ILoggerProvider? loggerProvider)
+    public MainWindow(AppSettings settings, ILoggerProvider? loggerProvider)
     {
         InitializeComponent();
 
-        this.settings = settings ?? AppSettings.GetDefaultSettings();
+        this.settings = settings;
         this.loggerProvider = loggerProvider;
         logger = loggerProvider?.CreateLogger(nameof(MainWindow));
         ToolTip.SetTip(bannerButton, repoUri);
@@ -75,31 +74,20 @@ public partial class MainWindow : Window
         maxRetryBox.Maximum = maxRetry;
     }
 
-    protected override async void OnOpened(EventArgs e)
+    protected override void OnOpened(EventArgs e)
     {
         // load settings
         var folderPath = settings.DownloadFolder;
-        var folder = await StorageProvider.TryGetFolderFromPathAsync(folderPath);
-        if (folder != null)
-        {
-            downloadFolder = folder;
+        if (Directory.Exists(folderPath))
             folderText.Text = folderPath;
-        }
         else
-        {
             folderText.Text = selectFolderMessage;
-        }
 
         var filePath = settings.WabbajackFile;
-        var file = await StorageProvider.TryGetFileFromPathAsync(filePath);
-        if (file != null)
-        {
-            await ExtractDownloads(file);
-        }
+        if (File.Exists(filePath))
+            fileText.Text = filePath;
         else
-        {
             fileText.Text = selectFileMessage;
-        }
 
         maxSizeBox.Value = Math.Clamp(settings.MaxDownloadSize, minDownloadSize, maxDownloadSize);
         maxDownloadBox.Value = Math.Clamp(settings.MaxConcurrentDownload, minConcurrentDownload, maxConcurrentDownload);
@@ -140,34 +128,8 @@ public partial class MainWindow : Window
         if (file.Count == 0) return;
 
         var storageFile = file[0];
-        await ExtractDownloads(storageFile);
-    }
-
-    /// <summary>
-    /// Extract downloadable mods from wabbajack file
-    /// </summary>
-    private async Task ExtractDownloads(IStorageFile wabbajackFile)
-    {
-        try
-        {
-            downloads = null;
-            using var stream = await wabbajackFile.OpenReadAsync();
-            var extractions = ModlistExtractor.ExtractDownloadLinks(stream, loggerProvider?.CreateLogger(nameof(ModlistExtractor)));
-            if (extractions.Count == 0)
-                throw new Exception("The selected wabbajack file does not contain any downloadable mods.");
-            else
-            {
-                var filePath = wabbajackFile.TryGetLocalPath() ?? wabbajackFile.Path.ToString();
-                fileText.Text = settings.WabbajackFile = filePath;
-                downloads = extractions;
-            }
-        }
-        catch (Exception ex)
-        {
-            logger?.LogError(ex, "Unable to extract download links from wabbajack file.");
-            infoText.Text = "Unable to extract download links from wabbajack file. Check log for more info.";
-            fileText.Text = selectFileMessage;
-        }
+        var filePath = storageFile.TryGetLocalPath() ?? storageFile.Path.ToString();
+        fileText.Text = settings.WabbajackFile = filePath;
     }
 
     /// <summary>
@@ -178,17 +140,17 @@ public partial class MainWindow : Window
         var folder = await StorageProvider.OpenFolderPickerAsync(downloadFolderPickerOptions);
         if (folder.Count == 0) return;
 
-        downloadFolder = folder[0];
+        var downloadFolder = folder[0];
         var folderPath = downloadFolder.TryGetLocalPath() ?? downloadFolder.Path.ToString();
         folderText.Text = settings.DownloadFolder = folderPath;
     }
 
     /// <summary>
-    /// Display a nexus signin window and attempt to retrieve user and session cookies
+    /// Display a nexus signin window and attempt to retrieve session cookies
     /// </summary>
     private async void DisplaySigninWindow(object sender, RoutedEventArgs args)
     {
-        using var signinWindow = new NexusSigninWindow(settings.NexusLandingPage, loggerProvider?.CreateLogger(nameof(NexusSigninWindow)));
+        var signinWindow = new NexusSigninWindow(settings.NexusLandingPage, loggerProvider?.CreateLogger(nameof(NexusSigninWindow)));
         container = await signinWindow.ShowAndGetCookiesAsync(this);
     }
 
@@ -197,17 +159,16 @@ public partial class MainWindow : Window
     /// </summary>
     private async void DownloadFiles(object sender, RoutedEventArgs args)
     {
-        // save settings before download
         settings.SaveSettings();
 
         // ready check
-        if (downloadFolder == null)
+        if (settings.DownloadFolder == null)
         {
             infoText.Text = "Please select a download folder.";
             folderText.Text = selectFolderMessage;
             return;
         }
-        if (downloads == null)
+        if (settings.WabbajackFile == null)
         {
             infoText.Text = "Please select a wabbajack file.";
             fileText.Text = selectFileMessage;
@@ -219,8 +180,28 @@ public partial class MainWindow : Window
             return;
         }
 
+        DisableControls();
+
+        // extract mod list
+        List<NexusDownload> downloads;
+        try
+        {
+            infoText.Text = "Extracting mod list...";
+            await Task.Delay(10);   // pause for the UI to update
+            downloads = ExtractDownloads(settings.WabbajackFile);
+        }
+        catch (Exception ex)
+        {
+            logger?.LogError(ex, "Unable to extract download links from wabbajack file.");
+            infoText.Text = "Unable to extract download links from wabbajack file. Check log for more info.";
+            settings.WabbajackFile = null;
+            fileText.Text = selectFileMessage;
+            RestoreControls();
+            return;
+        }
+
         // prepare downloader
-        var downloader = new NexusDownloader(downloadFolder, downloads, container,
+        var downloader = new NexusDownloader(settings.DownloadFolder, downloads, container,
             settings.MaxDownloadSize, settings.BufferSize, settings.MaxRetries,
             settings.MinRetryDelay, settings.MaxRetryDelay, settings.CheckHash,
             settings.MaxConcurrentDownload, settings.UserAgent,
@@ -229,17 +210,10 @@ public partial class MainWindow : Window
             new Progress<int>(UpdateDownloadProgress),
             new ProgressPool(progressContainer));
 
-        // disable controls
-        folderPickerButton.IsEnabled = false;
-        filePickerButton.IsEnabled = false;
-        loginButton.IsEnabled = false;
-        optionsBox.IsEnabled = false;
-        downloadButton.IsEnabled = false;
-
-        optionsBox.IsExpanded = false;
-        downloadProgressBar.Maximum = downloads.Count;
         progressContainer.IsVisible = true;
+        downloadProgressBar.Maximum = downloads.Count;
 
+        // begin download
         try
         {
             infoText.Text = "Downloading...";
@@ -260,7 +234,7 @@ public partial class MainWindow : Window
         {
             logger?.LogError(ex, "Download process has stopped due to insufficient privileges.");
             infoText.Text = "Unable to access download folder due to insufficient privileges. Please select another folder.";
-            downloadFolder = null;
+            settings.DownloadFolder = null;
             folderText.Text = selectFolderMessage;
         }
         catch (Exception ex)
@@ -272,26 +246,54 @@ public partial class MainWindow : Window
         finally
         {
             downloader.Dispose();
-            //restore controls
-            folderPickerButton.IsEnabled = true;
-            filePickerButton.IsEnabled = true;
-            loginButton.IsEnabled = true;
-            optionsBox.IsEnabled = true;
-            downloadButton.IsEnabled = true;
-            progressContainer.IsVisible = false;
+            RestoreControls();
         }
     }
 
-    protected void UpdateDownloadProgress(int i)
+    /// <summary>
+    /// Extract downloadable mods from wabbajack file
+    /// </summary>
+    private List<NexusDownload> ExtractDownloads(string filePath)
+    {
+        using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read);
+        var extractions = ModlistExtractor.ExtractDownloadLinks(stream, loggerProvider?.CreateLogger(nameof(ModlistExtractor)));
+        if (extractions.Count == 0)
+            throw new InvalidDataException("The selected wabbajack file does not contain any downloadable mods.");
+        else
+            return extractions;
+    }
+
+    private void DisableControls()
+    {
+        folderPickerButton.IsEnabled = false;
+        filePickerButton.IsEnabled = false;
+        loginButton.IsEnabled = false;
+        optionsBox.IsEnabled = false;
+        downloadButton.IsEnabled = false;
+        optionsBox.IsExpanded = false;
+    }
+
+    private void RestoreControls()
+    {
+        folderPickerButton.IsEnabled = true;
+        filePickerButton.IsEnabled = true;
+        loginButton.IsEnabled = true;
+        optionsBox.IsEnabled = true;
+        downloadButton.IsEnabled = true;
+        progressContainer.IsVisible = false;
+    }
+
+    private void UpdateDownloadProgress(int i)
     {
         downloadProgressBar.Value = i;
     }
 
-    // Cancel ongoing downloads before closing
+    // Cancel ongoing downloads and save settings before closing
     protected override void OnClosing(WindowClosingEventArgs e)
     {
         downloadTokenSource.Cancel();
         downloadTokenSource.Dispose();
+        Xilium.CefGlue.CefRuntime.Shutdown();
         settings.SaveSettings();
         base.OnClosing(e);
     }

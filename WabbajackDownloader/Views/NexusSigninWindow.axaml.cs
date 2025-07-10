@@ -11,7 +11,7 @@ using Xilium.CefGlue.Common.Handlers;
 
 namespace WabbajackDownloader.Views;
 
-public partial class NexusSigninWindow : Window, IDisposable
+public partial class NexusSigninWindow : Window
 {
     private const string loginPage = "https://users.nexusmods.com/auth/sign_in?redirect_url=";
     private readonly AvaloniaCefBrowser browser;
@@ -102,12 +102,6 @@ public partial class NexusSigninWindow : Window, IDisposable
         {
             logger?.LogCritical(ex, "Failed to get cookies from nexusmods.");
         }
-    }
-
-    public void Dispose()
-    {
-        browser.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>

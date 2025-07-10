@@ -7,8 +7,8 @@ namespace WabbajackDownloader.Configuration;
 
 public class AppSettings
 {
-    public required string DownloadFolder { get; set; }
-    public required string WabbajackFile { get; set; }
+    public required string? DownloadFolder { get; set; }
+    public required string? WabbajackFile { get; set; }
     public required int MaxConcurrentDownload { get; set; }
     public required int MaxRetries { get; set; }
     public required int MaxDownloadSize { get; set; }
@@ -22,12 +22,12 @@ public class AppSettings
     public required LogLevel LogLevel { get; set; }
     public required CefLogSeverity CefLogLevel { get; set; }
 
-    private string filePath;
+    private string? filePath;
 
     // parameterless constructor for json deserializer
-    public AppSettings() : this(string.Empty) { }
+    public AppSettings() : this(null) { }
 
-    private AppSettings(string filePath)
+    private AppSettings(string? filePath)
     {
         this.filePath = filePath;
     }
@@ -60,10 +60,10 @@ public class AppSettings
         }
     }
 
-    public static AppSettings GetDefaultSettings(string file = "") => new(file)
+    public static AppSettings GetDefaultSettings(string? file = null) => new(file)
     {
-        DownloadFolder = "",
-        WabbajackFile = "",
+        DownloadFolder = null,
+        WabbajackFile = null,
         MaxConcurrentDownload = 3,
         MaxRetries = 3,
         MaxDownloadSize = 1000,

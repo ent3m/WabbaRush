@@ -1,7 +1,7 @@
-﻿using Avalonia.Platform.Storage;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -19,7 +19,7 @@ internal class NexusDownloader : IDisposable
 {
     private static readonly string[] acceptedExtensions = [".zip", ".rar", ".7z"];
 
-    private readonly IStorageFolder downloadFolder;
+    private readonly string downloadFolder;
     private readonly IReadOnlyList<NexusDownload> downloads;
     private readonly long maxDownloadSize;
     private readonly int bufferSize;
@@ -38,7 +38,7 @@ internal class NexusDownloader : IDisposable
     private readonly HttpClientHandler handler;
     private readonly SemaphoreSlim semaphore;
 
-    public NexusDownloader(IStorageFolder downloadFolder, IReadOnlyList<NexusDownload> downloads, CookieContainer cookieContainer,
+    public NexusDownloader(string downloadFolder, IReadOnlyList<NexusDownload> downloads, CookieContainer cookieContainer,
         int maxDownloadSize, int bufferSize, int maxRetries, int minRetryDelay, int maxRetryDelay, bool checkHash,
         int maxConcurrentDownload, string userAgent, bool discoverExistingFiles, ILogger? logger,
         IProgress<int>? downloadProgress, ProgressPool? progressPool)
@@ -69,8 +69,8 @@ internal class NexusDownloader : IDisposable
     {
         if (discoverExistingFiles)
         {
-            existingFiles = await ScanFolderAsync(downloadFolder).ConfigureAwait(false);
-            logger?.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder.Path);
+            existingFiles = ScanFolder(downloadFolder);
+            logger?.LogInformation("Found {existingFiles.Count} existing files within {downloadFolder.Path}.", existingFiles.Count, downloadFolder);
         }
 
         // creates a wrapper around the original token so that we can cancel all download tasks
@@ -238,8 +238,9 @@ internal class NexusDownloader : IDisposable
         logger?.LogTrace("Starting download for {file}...", download.FileName);
         using var downloadStream = await client.GetStreamAsync(url, token);
         using var inputStream = new ProgressStream(downloadStream, progress);
-        using var file = await downloadFolder.CreateFileAsync(fileName) ?? throw new UnauthorizedAccessException("Unable to create file in download folder.");
-        using var fileStream = await file.OpenWriteAsync();
+        //using var file = await downloadFolder.CreateFileAsync(fileName) ?? throw new UnauthorizedAccessException("Unable to create file in download folder.");
+        var filePath = Path.Combine(downloadFolder, fileName);
+        using var fileStream = File.Open(filePath, FileMode.Create, FileAccess.ReadWrite);
         if (checkHash)
         {
             var hash = await inputStream.HashingCopy(fileStream, token, bufferSize);
@@ -261,24 +262,20 @@ internal class NexusDownloader : IDisposable
     /// <summary>
     /// Scan the folder for existing files
     /// </summary>
-    private async Task<Dictionary<string, long>> ScanFolderAsync(IStorageFolder folder)
+    private Dictionary<string, long> ScanFolder(string folder)
     {
+        logger?.LogTrace("Scanning folder {folder} for existing files.", folder);
         var results = new Dictionary<string, long>();
-        var items = folder.GetItemsAsync();
-        logger?.LogTrace("Scanning folder {folder} for existing files.", folder.Name);
-        await foreach (var item in items)
+        foreach (var file in Directory.EnumerateFiles(folder, "*.*", SearchOption.TopDirectoryOnly))
         {
-            if (item is IStorageFile file)
+            var info = new FileInfo(file);
+            var extension = info.Extension.ToLowerInvariant();
+            if (acceptedExtensions.Contains(extension))
             {
-                var name = file.Name;
-                var extension = GetFileExtension(name).ToLowerInvariant();
-                if (acceptedExtensions.Contains(extension))
-                {
-                    var properties = await file.GetBasicPropertiesAsync();
-                    var size = properties.Size ?? 0;
-                    results.Add(name, (long)size);
-                    logger?.LogTrace("Discovered file {name} with size {size}B.", name, size);
-                }
+                var name = info.Name;
+                var size = info.Length;
+                results.Add(name, size);
+                logger?.LogTrace("Discovered file {name} of size {size} B.", name, size);
             }
         }
         return results;
@@ -328,18 +325,6 @@ internal class NexusDownloader : IDisposable
         name = baseUrl[(dividerIndex + 1)..];
 
         return Uri.UnescapeDataString(name.ToString());
-    }
-
-    /// <summary>
-    /// Extract extension from file name
-    /// </summary>
-    private static string GetFileExtension(ReadOnlySpan<char> fileName)
-    {
-        var divider = fileName.LastIndexOf('.');
-        if (divider == -1)
-            return string.Empty;
-        else
-            return fileName[divider..].ToString();
     }
 
     public void Dispose()
