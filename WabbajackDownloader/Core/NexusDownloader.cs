@@ -28,7 +28,7 @@ internal class NexusDownloader : IDisposable
     private readonly bool checkHash;
     private readonly string userAgent;
     private readonly bool discoverExistingFiles;
-    private readonly int timeout;
+    private readonly TimeSpan timeout;
     private readonly ILogger? logger;
     private readonly DownloadProgressPool? progressPool;
     private readonly CircuitBreaker circuitBreaker;
@@ -47,7 +47,7 @@ internal class NexusDownloader : IDisposable
         checkHash = settings.CheckHash;
         userAgent = settings.UserAgent;
         discoverExistingFiles = settings.DiscoverExistingFiles;
-        timeout = settings.HttpTimeout;
+        timeout = TimeSpan.FromSeconds(settings.HttpTimeout);
         this.logger = logger;
         this.progressPool = progressPool;
         this.circuitBreaker = circuitBreaker;
@@ -155,27 +155,27 @@ internal class NexusDownloader : IDisposable
         // construct and send POST request to acquire download url
         using var client = new HttpClient(handler, false)
         {
-            Timeout = TimeSpan.FromSeconds(timeout)
+            Timeout = timeout
         };
         client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
 
         logger?.LogTrace("Sending HTTP POST request for {file}.", download.FileName);
         var request = ConstructRequest(download);
-        var response = await request.SendAsync(client, true, token);
-        var responseString = await response.ReadAsStringAsync(token);
+        var content = await request.SendAsync(client, true, token);
+        var contentString = await content.ReadAsStringAsync(token);
 
         // interpret download url and extract file name
         string fileName;
         string url;
         try
         {
-            var jsonResponse = JsonNode.Parse(responseString)!.AsObject();
+            var jsonResponse = JsonNode.Parse(contentString)!.AsObject();
             url = jsonResponse["url"]!.ToString();
             fileName = GetFileName(url);
         }
         catch (Exception ex)
         {
-            throw new InvalidJsonResponseException($"Http response does not contain download url: {responseString}", ex);
+            throw new InvalidJsonResponseException($"Http response does not contain download url: {contentString}", ex);
         }
 
         // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
@@ -200,8 +200,11 @@ internal class NexusDownloader : IDisposable
 
         // download the file and write it to disk
         logger?.LogTrace("Starting download for {file}...", download.FileName);
-        await using var downloadStream = await client.GetStreamAsync(url, token);
-        await using var inputStream = new ProgressStream(downloadStream, progress);
+        using var response = await client.GetAsync(url, token);
+        response.EnsureSuccessStatusCode();
+        await using var downloadStream = await response.Content.ReadAsStreamAsync(token);
+        await using var progressStream = new ProgressStream(downloadStream, progress);
+        await using var inputStream = new IdleTimeoutStream(progressStream, timeout);
         var filePath = Path.Combine(downloadFolder, fileName);
         await using var fileStream = File.Open(filePath, FileMode.Create, FileAccess.ReadWrite);
 

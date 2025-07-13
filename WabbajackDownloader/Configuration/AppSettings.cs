@@ -21,7 +21,7 @@ public class AppSettings
     public int RetryDelay { get; set; } = 500;
     public int DelayMultiplier { get; set; } = 2;
     public int DelayJitter { get; set; } = 1000;
-    public int HttpTimeout { get; set; } = 20;
+    public int HttpTimeout { get; set; } = 30;
     public bool CheckHash { get; set; } = true;
     public string UserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0";
     public string ModListDownloadPath { get; set; } = "downloaded-modlists";
