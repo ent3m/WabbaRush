@@ -3,8 +3,15 @@ An automatic downloader for [Wabbajack](https://github.com/wabbajack-tools/wabba
 # Usage
 ![Image](https://github.com/ent3m/WabbajackDownloader/blob/master/WabbajackDownloader/Assets/screenshot.png)
 
-Follow the steps and click on **Download** to begin downloading.<br><br>
-A **settings.json** file is generated the first time the program is launched, which can be edited to fine-tune how the program behaves. The program will need to be launched again to read any changes.
+1. Select a .wabbajack file.<br>
+*Or*<br>
+Uncheck **Use local wabbajack file** in **Options** to download a mod list from the gallery.
+2. Select a download folder.
+3. Login to Nexus account. After logging in, you'll be taken to *SkyUI* page.<br>
+Wait until the page is fully loaded, then closes the Nexus window.
+5. Click on **Download** and wait.<br>
+If the program is exited while downloading, it will try to resume where it left off the next time it runs.<br><br>
+You can fine-tune the program's behaviors in **settings.json**. The program will need to be re-launched to read any changes.
 
 # Installation
 Download the latest [release](https://github.com/ent3m/WabbajackDownloader/releases), extract, and run **WabbajackDownloader.exe**.<br><br>
