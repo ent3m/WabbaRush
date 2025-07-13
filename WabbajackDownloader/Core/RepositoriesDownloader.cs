@@ -16,13 +16,16 @@ internal class RepositoriesDownloader
 {
     private const string repositoriesUrl = "https://raw.githubusercontent.com/wabbajack-tools/mod-lists/master/repositories.json";
 
-    public static async Task<ModListMetadata[]?> FetchRepositoriesAsync(int maxConcurrency, ILogger? logger, CancellationToken token)
+    public static async Task<ModListMetadata[]?> FetchRepositoriesAsync(int maxConcurrency, int timeout, ILogger? logger, CancellationToken token)
     {
         ModListMetadata[]? repositories = default;
         try
         {
             logger?.LogTrace("Downloading repositories.json from {url}.", repositoriesUrl);
-            using var client = new HttpClient();
+            using var client = new HttpClient()
+            {
+                Timeout = TimeSpan.FromSeconds(timeout)
+            };
             var repo = await client.GetFromJsonAsync<Dictionary<string, Uri>>(repositoriesUrl, SerializerOptions.Options, token);
             logger?.LogTrace("Extracting mod lists from repositories.json.");
             var options = new ParallelOptions()

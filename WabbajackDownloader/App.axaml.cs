@@ -56,7 +56,8 @@ namespace WabbajackDownloader
                 desktop.MainWindow = splashscreen;
             }
 
-            RepositoriesDownloader.FetchRepositoriesAsync(settings.MaxConcurrency, loggerProvider.CreateLogger(nameof(RepositoriesDownloader)), CancellationToken.None)
+            RepositoriesDownloader.FetchRepositoriesAsync(settings.MaxConcurrency, settings.HttpTimeout,
+                loggerProvider.CreateLogger(nameof(RepositoriesDownloader)), CancellationToken.None)
                 .ContinueWith(r => Dispatcher.UIThread.Post(() => CompleteApplicationStart(r.Result)));
 
             base.OnFrameworkInitializationCompleted();
