@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.Common;
 
 /// <summary>
 /// A wrapper around another stream. Use this to report progress each time the inner stream is read.

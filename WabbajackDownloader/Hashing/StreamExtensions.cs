@@ -6,16 +6,16 @@ using System.Threading.Tasks;
 
 namespace WabbajackDownloader.Hashing;
 
-/// Taken from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
+/// Adapted from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
 public static class StreamExtensions
 {
-    public static async Task<Hash> Hash(this Stream stream, CancellationToken token)
+    public static async Task<Hash> Hash(this Stream stream, int bufferSize, CancellationToken token)
     {
-        return await stream.HashingCopy(Stream.Null, token);
+        return await stream.HashingCopy(Stream.Null, bufferSize, token);
     }
 
-    public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream,
-        CancellationToken token, int buffserSize = 1024 * 1024)
+    public static async Task<Hash> HashingCopy(this Stream inputStream, Stream outputStream, int buffserSize,
+        CancellationToken token)
     {
         using var rented = MemoryPool<byte>.Shared.Rent(buffserSize);
         var buffer = rented.Memory;

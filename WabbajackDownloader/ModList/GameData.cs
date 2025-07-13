@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.ModList;
 
 internal record GameData(string ArchiveName, string NexusName, long NexusGameID)
 {

@@ -2,7 +2,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignHeight="480" d:DesignWidth="480"
+        xmlns:modlist="using:WabbajackDownloader.ModList"
+        mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="500"
         x:Class="WabbajackDownloader.Views.MainWindow"
         Icon="/Assets/wabbajack.ico"
         Title="Wabbajack Downloader"
@@ -10,7 +11,7 @@
         ExtendClientAreaChromeHints="PreferSystemChrome"
         TransparencyLevelHint="AcrylicBlur"
         Background="{StaticResource WindowBackgroundColor}"
-        Height="480" Width="480"
+        Height="500" Width="500"
         WindowStartupLocation="CenterScreen">
 
   <Window.Resources>
@@ -21,9 +22,16 @@
     <StaticResource x:Key="ExpanderHeaderBorderBrushPointerOver" ResourceKey="MainColor" />
     <StaticResource x:Key="ExpanderHeaderBorderBrushPressed" ResourceKey="MainColor" />
     <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="BackgroundColor" />
-    <StaticResource x:Key="ExpanderHeaderBackgroundPointerOver" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundPointerOver" ResourceKey="HighlightColor" />
     <StaticResource x:Key="ExpanderHeaderBackgroundPressed" ResourceKey="BackgroundColor" />
     <StaticResource x:Key="ExpanderHeaderBackgroundDisabled" ResourceKey="BackgroundColor" />
+    <!-- ComboBox colors -->
+    <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="MainColor" />
+    <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="MainColor" />
+    <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="MainColor" />
+    <StaticResource x:Key="ComboBoxBackground" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="HighlightColor" />
+    <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="BackgroundColor" />
   </Window.Resources>
   
   <!-- Main container -->
@@ -148,13 +156,27 @@
           <!-- File selection controls -->
           <Button Name="filePickerButton"
                   Click="OpenWabbajackFilePicker"
-                  Classes="picker">
+                  Classes="picker"
+                  IsVisible="{Binding #useLocalFileBox.IsChecked}"
+                  Grid.Column="1">
             <Grid ColumnDefinitions="30,*,30"
                   Width="{Binding $parent.Bounds.Width}">
               <TextBlock Name="fileText"/>
               <Image/>
             </Grid>
           </Button>
+          
+          <ComboBox Name="modlistBox"
+                    HorizontalAlignment="Stretch"
+                    Height="{Binding #folderPickerButton.Bounds.Height}"
+                    IsVisible="{Binding !#useLocalFileBox.IsChecked}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate DataType="modlist:ModListMetadata">
+                <TextBlock Text="{Binding Title}"
+                           ToolTip.Tip="{Binding Summary}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
 
           <!-- Folder selection controls -->
           <Button Name="folderPickerButton"
@@ -187,6 +209,12 @@
                     Header="    Options">
             <StackPanel HorizontalAlignment="Center"
                         Orientation="Vertical">
+              <!-- Use local file -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Use local wabbajack file:"
+                           TextAlignment="Center"/>
+                <CheckBox Name="useLocalFileBox"/>
+              </StackPanel>
               <!-- Max download size -->
               <StackPanel Orientation="Vertical">
                 <StackPanel HorizontalAlignment="Center">

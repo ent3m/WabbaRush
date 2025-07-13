@@ -2,10 +2,10 @@
 using System;
 using System.Numerics;
 
-namespace WabbajackDownloader.Core;
+namespace WabbajackDownloader.Common;
 
 /// <summary>
-/// Progress that is displayed by a progress bar
+/// IProgress that is coupled with a ProgressBar
 /// </summary>
 internal class ProgressDisplay<T> where T : INumber<T>
 {

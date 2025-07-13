@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="300"
+        x:Class="WabbajackDownloader.Splashscreen"
+        Width="280"
+        Height="280"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        Topmost="True"
+        Background="Transparent"
+        BorderBrush="Transparent"
+        Title="Wabbajack Downloader">
+
+  <StackPanel Orientation="Vertical">
+    <Image Source="/Assets/wabbajack.png"
+           Width="260"
+           Height="260"/>
+    <TextBlock Name="loadingText"
+               Text="Fetching repositories..."
+               TextAlignment="Center"/>
+  </StackPanel>
+  
+</Window>

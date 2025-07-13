@@ -10,9 +10,12 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using WabbajackDownloader.Common;
 using WabbajackDownloader.Configuration;
 using WabbajackDownloader.Core;
 using WabbajackDownloader.Exceptions;
+using WabbajackDownloader.Extensions;
+using WabbajackDownloader.ModList;
 
 namespace WabbajackDownloader.Views;
 
@@ -36,12 +39,12 @@ public partial class MainWindow : Window
         Title = "Select folder to store downloaded mods",
         AllowMultiple = false
     };
-    private const int minDownloadSize = 1;
-    private const int maxDownloadSize = 9999;
-    private const int minConcurrentDownload = 1;
-    private const int maxConcurrentDownload = 10;
-    private const int minRetry = 0;
-    private const int maxRetry = 10;
+    private const int downloadSizeLowerBound = 1;
+    private const int downloadSizeUpperBound = 9999;
+    private const int concurrencyLowerBound = 1;
+    private const int concurrencyUpperBound = 10;
+    private const int retriesLowerBound = 0;
+    private const int retriesUpperBound = 10;
 
     private readonly AppSettings settings;
     private readonly ILoggerProvider? loggerProvider;
@@ -52,30 +55,30 @@ public partial class MainWindow : Window
 
 #if DEBUG
     // parameterless constructor for xaml previewer
-    public MainWindow() : this(AppSettings.GetDefaultSettings(), null)
+    public MainWindow() : this(null, new(), null)
     {
 
     }
 #endif
 
-    public MainWindow(AppSettings settings, ILoggerProvider? loggerProvider)
+    public MainWindow(ModListMetadata[]? modlists, AppSettings settings, ILoggerProvider? loggerProvider)
     {
         InitializeComponent();
 
         this.settings = settings;
         this.loggerProvider = loggerProvider;
         logger = loggerProvider?.CreateLogger(nameof(MainWindow));
-        ToolTip.SetTip(bannerButton, repoUri);
-        maxSizeBox.Minimum = minDownloadSize;
-        maxSizeBox.Maximum = maxDownloadSize;
-        maxDownloadBox.Minimum = minConcurrentDownload;
-        maxDownloadBox.Maximum = maxConcurrentDownload;
-        maxRetryBox.Minimum = minRetry;
-        maxRetryBox.Maximum = maxRetry;
-    }
 
-    protected override void OnOpened(EventArgs e)
-    {
+        // setup controls
+        ToolTip.SetTip(bannerButton, repoUri);
+        maxSizeBox.Minimum = downloadSizeLowerBound;
+        maxSizeBox.Maximum = downloadSizeUpperBound;
+        maxDownloadBox.Minimum = concurrencyLowerBound;
+        maxDownloadBox.Maximum = concurrencyUpperBound;
+        maxRetryBox.Minimum = retriesLowerBound;
+        maxRetryBox.Maximum = retriesUpperBound;
+        modlistBox.ItemsSource = modlists;
+
         // load settings
         var folderPath = settings.DownloadFolder;
         if (Directory.Exists(folderPath))
@@ -89,9 +92,13 @@ public partial class MainWindow : Window
         else
             fileText.Text = selectFileMessage;
 
-        maxSizeBox.Value = Math.Clamp(settings.MaxDownloadSize, minDownloadSize, maxDownloadSize);
-        maxDownloadBox.Value = Math.Clamp(settings.MaxConcurrentDownload, minConcurrentDownload, maxConcurrentDownload);
-        maxRetryBox.Value = Math.Clamp(settings.MaxRetries, minRetry, maxRetry);
+        if (modlists != null && settings.SelectedModList != null)
+            modlistBox.SelectedIndex = Array.FindIndex(modlists, t => t.Title == settings.SelectedModList);
+
+        maxSizeBox.Value = Math.Clamp(settings.MaxDownloadSize, downloadSizeLowerBound, downloadSizeUpperBound);
+        maxDownloadBox.Value = Math.Clamp(settings.MaxConcurrency, concurrencyLowerBound, concurrencyUpperBound);
+        maxRetryBox.Value = Math.Clamp(settings.MaxRetries, retriesLowerBound, retriesUpperBound);
+        useLocalFileBox.IsChecked = settings.UseLocalFile;
 
         // wire up observables
         var maxDownloadSizeValue = maxSizeBox.GetObservable(Slider.ValueProperty);
@@ -101,7 +108,7 @@ public partial class MainWindow : Window
         maxConcurrentDownloadValue.Subscribe(new AnonymousObserver<decimal?>(value =>
         {
             if (value.HasValue)
-                settings.MaxConcurrentDownload = decimal.ConvertToInteger<int>(value.Value);
+                settings.MaxConcurrency = decimal.ConvertToInteger<int>(value.Value);
         }));
 
         var maxRetryValue = maxRetryBox.GetObservable(NumericUpDown.ValueProperty);
@@ -111,7 +118,19 @@ public partial class MainWindow : Window
                 settings.MaxRetries = decimal.ConvertToInteger<int>(value.Value);
         }));
 
-        base.OnOpened(e);
+        var useLocalValue = useLocalFileBox.GetObservable(CheckBox.IsCheckedProperty);
+        useLocalValue.Subscribe(new AnonymousObserver<bool?>(value =>
+        {
+            if (value.HasValue)
+                settings.UseLocalFile = value.Value;
+        }));
+
+        var selectedModListValue = modlistBox.GetObservable(ComboBox.SelectedItemProperty);
+        selectedModListValue.Subscribe(new AnonymousObserver<object?>(item =>
+        {
+            if (item is ModListMetadata metadata)
+                settings.SelectedModList = metadata.Title;
+        }));
     }
 
     /// <summary>
@@ -165,14 +184,23 @@ public partial class MainWindow : Window
         if (settings.DownloadFolder == null)
         {
             infoText.Text = "Please select a download folder.";
-            folderText.Text = selectFolderMessage;
             return;
         }
-        if (settings.WabbajackFile == null)
+        if (settings.UseLocalFile)
         {
-            infoText.Text = "Please select a wabbajack file.";
-            fileText.Text = selectFileMessage;
-            return;
+            if (settings.WabbajackFile == null)
+            {
+                infoText.Text = "Please select a wabbajack file.";
+                return;
+            }
+        }
+        else
+        {
+            if (modlistBox.SelectedItem == null)
+            {
+                infoText.Text = "Please select a mod list.";
+                return;
+            }
         }
         if (container == null)
         {
@@ -180,15 +208,45 @@ public partial class MainWindow : Window
             return;
         }
 
+        logger?.LogInformation("Starting download process.");
         DisableControls();
+        var circuitBreaker = new CircuitBreaker(settings.MaxRetries, settings.RetryDelay, settings.DelayMultiplier, settings.DelayJitter);
 
         // extract mod list
         List<NexusDownload> downloads;
         try
         {
-            infoText.Text = "Extracting mod list...";
+            string file;
+            if (settings.UseLocalFile)
+            {
+                file = settings.WabbajackFile!;
+                logger?.LogTrace("Using local wabbajack file {file}.", file);
+            }
+            else
+            {
+                var modlistDownloader = new ModListDownloader(settings, circuitBreaker, loggerProvider?.CreateLogger(nameof(ModListDownloader)));
+                var metadata = (ModListMetadata)modlistBox.SelectedItem!;
+                infoText.Text = "Downloading wabbajack file...";
+                progressContainer.IsVisible = true;
+                downloadProgressBar.Maximum = metadata.DownloadMetadata.Size;
+                downloadProgressBar.Value = 0;
+                downloadProgressBar.ProgressTextFormat = metadata.DownloadMetadata.Size.DisplayByteSize() + " ({1:0}%)";
+                var progressLock = new Lock();
+                var progress = new Progress<long>(i =>
+                {
+                    lock (progressLock)
+                    {
+                        downloadProgressBar.Value += i;
+                    }
+                });
+                logger?.LogTrace("Getting wabbajack file for {title} from Wabbajack CDN.", metadata.Title);
+                file = await modlistDownloader.DownloadWabbajackAsync(metadata, progress, downloadTokenSource.Token);
+            }
+
+            logger?.LogTrace("Extracting mods from wabbajack file.");
+            infoText.Text = "Extracting download links...";
             await Task.Delay(10);   // pause for the UI to update
-            downloads = ExtractDownloads(settings.WabbajackFile);
+            downloads = ExtractDownloads(file);
         }
         catch (Exception ex)
         {
@@ -196,29 +254,29 @@ public partial class MainWindow : Window
             infoText.Text = "Unable to extract download links from wabbajack file. Check log for more info.";
             settings.WabbajackFile = null;
             fileText.Text = selectFileMessage;
+            progressContainer.IsVisible = false;
             RestoreControls();
             return;
         }
+        logger?.LogTrace("Extraction completed. Downloading individual mods.");
 
         // prepare downloader
         var downloader = new NexusDownloader(settings.DownloadFolder, downloads, container,
-            settings.MaxDownloadSize, settings.BufferSize, settings.MaxRetries,
-            settings.MinRetryDelay, settings.MaxRetryDelay, settings.CheckHash,
-            settings.MaxConcurrentDownload, settings.UserAgent,
-            settings.DiscoverExistingFiles,
-            loggerProvider?.CreateLogger(nameof(NexusDownloader)),
-            new Progress<int>(UpdateDownloadProgress),
-            new ProgressPool(progressContainer));
+            settings, loggerProvider?.CreateLogger(nameof(NexusDownloader)),
+            new DownloadProgressPool(progressContainer),
+            circuitBreaker);
 
-        progressContainer.IsVisible = true;
-        downloadProgressBar.Maximum = downloads.Count;
-
-        // begin download
+        // begin downloading mods
         try
         {
             infoText.Text = "Downloading...";
-            await downloader.DownloadAsync(downloadTokenSource.Token);
+            progressContainer.IsVisible = true;
+            downloadProgressBar.Maximum = downloads.Count;
+            downloadProgressBar.Value = 0;
+            downloadProgressBar.ProgressTextFormat = "{0}/{3} ({1:0}%)";
+            await downloader.DownloadAsync(new Progress<int>(i => downloadProgressBar.Value = i), downloadTokenSource.Token);
             infoText.Text = "All done!";
+            logger?.LogInformation("Download process completed.");
         }
         catch (OperationCanceledException ex)
         {
@@ -246,6 +304,7 @@ public partial class MainWindow : Window
         finally
         {
             downloader.Dispose();
+            progressContainer.IsVisible = false;
             RestoreControls();
         }
     }
@@ -255,8 +314,7 @@ public partial class MainWindow : Window
     /// </summary>
     private List<NexusDownload> ExtractDownloads(string filePath)
     {
-        using var stream = File.Open(filePath, FileMode.Open, FileAccess.Read);
-        var extractions = ModlistExtractor.ExtractDownloadLinks(stream, loggerProvider?.CreateLogger(nameof(ModlistExtractor)));
+        var extractions = ModlistExtractor.ExtractDownloadLinks(filePath, loggerProvider?.CreateLogger(nameof(ModlistExtractor)));
         if (extractions.Count == 0)
             throw new InvalidDataException("The selected wabbajack file does not contain any downloadable mods.");
         else
@@ -267,6 +325,7 @@ public partial class MainWindow : Window
     {
         folderPickerButton.IsEnabled = false;
         filePickerButton.IsEnabled = false;
+        modlistBox.IsEnabled = false;
         loginButton.IsEnabled = false;
         optionsBox.IsEnabled = false;
         downloadButton.IsEnabled = false;
@@ -277,15 +336,10 @@ public partial class MainWindow : Window
     {
         folderPickerButton.IsEnabled = true;
         filePickerButton.IsEnabled = true;
+        modlistBox.IsEnabled = true;
         loginButton.IsEnabled = true;
         optionsBox.IsEnabled = true;
         downloadButton.IsEnabled = true;
-        progressContainer.IsVisible = false;
-    }
-
-    private void UpdateDownloadProgress(int i)
-    {
-        downloadProgressBar.Value = i;
     }
 
     // Cancel ongoing downloads and save settings before closing

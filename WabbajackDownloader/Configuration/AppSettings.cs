@@ -1,38 +1,44 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Text.Json;
+using WabbajackDownloader.Serializer;
 using Xilium.CefGlue;
 
 namespace WabbajackDownloader.Configuration;
 
 public class AppSettings
 {
-    public required string? DownloadFolder { get; set; }
-    public required string? WabbajackFile { get; set; }
-    public required int MaxConcurrentDownload { get; set; }
-    public required int MaxRetries { get; set; }
-    public required int MaxDownloadSize { get; set; }
-    public required string NexusLandingPage { get; set; }
-    public required bool DiscoverExistingFiles { get; set; }
-    public required int BufferSize { get; set; }
-    public required int MinRetryDelay { get; set; }
-    public required int MaxRetryDelay { get; set; }
-    public required bool CheckHash { get; set; }
-    public required string UserAgent { get; set; }
-    public required LogLevel LogLevel { get; set; }
-    public required CefLogSeverity CefLogLevel { get; set; }
+    public string? DownloadFolder { get; set; }
+    public string? WabbajackFile { get; set; }
+    public string? SelectedModList { get; set; }
+    public bool UseLocalFile { get; set; } = true;
+    public int MaxConcurrency { get; set; } = 3;
+    public int MaxRetries { get; set; } = 3;
+    public int MaxDownloadSize { get; set; } = 1000;
+    public string NexusLandingPage { get; set; } = "https://www.nexusmods.com/skyrimspecialedition/mods/12604";
+    public bool DiscoverExistingFiles { get; set; } = true;
+    public int BufferSize { get; set; } = 512 * 1024;
+    public int RetryDelay { get; set; } = 500;
+    public int DelayMultiplier { get; set; } = 2;
+    public int DelayJitter { get; set; } = 1000;
+    public int HttpTimeout { get; set; } = 20;
+    public bool CheckHash { get; set; } = true;
+    public string UserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0";
+    public string ModListDownloadPath { get; set; } = "downloaded-modlists";
+    public LogLevel LogLevel { get; set; } = LogLevel.Information;
+    public CefLogSeverity CefLogLevel { get; set; } = CefLogSeverity.Error;
 
     private string? filePath;
 
     // parameterless constructor for json deserializer
-    public AppSettings() : this(null) { }
+    public AppSettings() { }
 
     private AppSettings(string? filePath)
     {
         this.filePath = filePath;
     }
 
-    public static AppSettings LoadOrGetDefaultSettings(string filePath) => LoadSettings(filePath) ?? GetDefaultSettings(filePath);
+    public static AppSettings LoadOrGetDefaultSettings(string filePath) => LoadSettings(filePath) ?? new(filePath);
 
     public static AppSettings? LoadSettings(string filePath)
     {
@@ -40,7 +46,7 @@ public class AppSettings
         try
         {
             var json = File.ReadAllText(filePath);
-            settings = JsonSerializer.Deserialize<AppSettings>(json, SourceGenerationContext.Default.AppSettings);
+            settings = JsonSerializer.Deserialize<AppSettings>(json, SerializerOptions.Options);
             if (settings != null)
                 settings.filePath = filePath;
         }
@@ -55,26 +61,8 @@ public class AppSettings
     {
         if (!string.IsNullOrEmpty(filePath))
         {
-            var json = JsonSerializer.Serialize<AppSettings>(this, SourceGenerationContext.Default.AppSettings);
+            var json = JsonSerializer.Serialize<AppSettings>(this, SerializerOptions.Options);
             File.WriteAllText(filePath, json);
         }
     }
-
-    public static AppSettings GetDefaultSettings(string? file = null) => new(file)
-    {
-        DownloadFolder = null,
-        WabbajackFile = null,
-        MaxConcurrentDownload = 3,
-        MaxRetries = 3,
-        MaxDownloadSize = 1000,
-        NexusLandingPage = "https://www.nexusmods.com/skyrimspecialedition/mods/12604",
-        DiscoverExistingFiles = true,
-        BufferSize = 512 * 1024,
-        MinRetryDelay = 1000,
-        MaxRetryDelay = 3000,
-        CheckHash = true,
-        UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
-        LogLevel = LogLevel.Warning,
-        CefLogLevel = CefLogSeverity.Error
-    };
 }

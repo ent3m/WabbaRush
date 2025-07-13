@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace WabbajackDownloader.Hashing;
 
-/// Taken from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
+/// Adapted from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
 public static class StringExtensions
 {
     public static string ToHex(this byte[] bytes)

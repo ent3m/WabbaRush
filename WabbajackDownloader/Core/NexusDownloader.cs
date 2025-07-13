@@ -8,6 +8,8 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using WabbajackDownloader.Common;
+using WabbajackDownloader.Configuration;
 using WabbajackDownloader.Exceptions;
 using WabbajackDownloader.Extensions;
 using WabbajackDownloader.Hashing;
@@ -23,49 +25,42 @@ internal class NexusDownloader : IDisposable
     private readonly IReadOnlyList<NexusDownload> downloads;
     private readonly long maxDownloadSize;
     private readonly int bufferSize;
-    private readonly int maxRetries;
-    private readonly int minRetryDelay;
-    private readonly int maxRetryDelay;
     private readonly bool checkHash;
     private readonly string userAgent;
     private readonly bool discoverExistingFiles;
+    private readonly int timeout;
     private readonly ILogger? logger;
-    private readonly IProgress<int>? downloadProgress;
-    private readonly ProgressPool? progressPool;
+    private readonly DownloadProgressPool? progressPool;
+    private readonly CircuitBreaker circuitBreaker;
 
-    private readonly Random random = new();
     private Dictionary<string, long>? existingFiles;
     private readonly HttpClientHandler handler;
     private readonly SemaphoreSlim semaphore;
 
     public NexusDownloader(string downloadFolder, IReadOnlyList<NexusDownload> downloads, CookieContainer cookieContainer,
-        int maxDownloadSize, int bufferSize, int maxRetries, int minRetryDelay, int maxRetryDelay, bool checkHash,
-        int maxConcurrentDownload, string userAgent, bool discoverExistingFiles, ILogger? logger,
-        IProgress<int>? downloadProgress, ProgressPool? progressPool)
+        AppSettings settings, ILogger? logger, DownloadProgressPool? progressPool, CircuitBreaker circuitBreaker)
     {
         this.downloadFolder = downloadFolder;
         this.downloads = downloads;
-        this.maxDownloadSize = maxDownloadSize * 1024 * 1024;
-        this.bufferSize = bufferSize;
-        this.maxRetries = maxRetries;
-        this.minRetryDelay = minRetryDelay;
-        this.maxRetryDelay = maxRetryDelay;
-        this.checkHash = checkHash;
-        this.userAgent = userAgent;
-        this.discoverExistingFiles = discoverExistingFiles;
+        this.maxDownloadSize = settings.MaxDownloadSize * 1024 * 1024;
+        bufferSize = settings.BufferSize;
+        checkHash = settings.CheckHash;
+        userAgent = settings.UserAgent;
+        discoverExistingFiles = settings.DiscoverExistingFiles;
+        timeout = settings.HttpTimeout;
         this.logger = logger;
-        this.downloadProgress = downloadProgress;
         this.progressPool = progressPool;
+        this.circuitBreaker = circuitBreaker;
 
         handler = new HttpClientHandler()
         {
             CookieContainer = cookieContainer,
             UseCookies = true
         };
-        semaphore = new SemaphoreSlim(maxConcurrentDownload);
+        semaphore = new SemaphoreSlim(settings.MaxConcurrency);
     }
 
-    public async Task DownloadAsync(CancellationToken token)
+    public async Task DownloadAsync(IProgress<int>? downloadProgress, CancellationToken token)
     {
         if (discoverExistingFiles)
         {
@@ -99,13 +94,25 @@ internal class NexusDownloader : IDisposable
             {
                 try
                 {
-                    await DownloadFileWithRetryAsync(download, progress?.Progress, linkedToken);
+                    await circuitBreaker.AutoRetryAsync(async () => await DownloadFileAsync(download, progress?.Progress, linkedToken),
+                        static ex =>
+                        {
+                            // these are most likely user errors. it's useless to retry here
+                            if (ex is InvalidJsonResponseException or UnauthorizedAccessException)
+                                return true;
+
+                            // protect user's account by respecting TooManyRequests error
+                            else if (ex is HttpRequestException httpException && httpException.StatusCode == HttpStatusCode.TooManyRequests)
+                                return true;
+
+                            return false;
+                        },
+                        logger, $"Download for {download.FileName}", linkedToken);
                 }
                 // catch OperationCancenceledException that bubbles up from pending downloads
                 catch (OperationCanceledException)
                 {
-                    logger?.LogWarning("Download {downloadName} is cancelled.", download.FileName);
-                    throw;
+                    logger?.LogWarning("Download for {downloadName} is cancelled.", download.FileName);
                 }
                 // cancel all pending downloads if one download fails
                 catch
@@ -115,61 +122,13 @@ internal class NexusDownloader : IDisposable
                 }
                 finally
                 {
-                    progressPool?.Return(progress!); // if progressPool is not null then progress won't be null
+                    progressPool?.Return(progress!); // progress is not null if progress pool is not null
                     semaphore.Release();
                 }
             }, linkedToken));
         }
 
         await Task.WhenAll(downloadTasks);
-    }
-
-    /// <summary>
-    /// Download file with error handling and retry
-    /// </summary>
-    private async Task DownloadFileWithRetryAsync(NexusDownload download, IProgress<long>? progress, CancellationToken token)
-    {
-        int retryCount = 0;
-
-        while (retryCount < maxRetries)
-        {
-            try
-            {
-                token.ThrowIfCancellationRequested();
-                await DownloadFileAsync(download, progress, token);
-                break;
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                // these are most likely user errors. it's useless to retry here
-                if (ex is InvalidJsonResponseException or UnauthorizedAccessException)
-                {
-                    throw;
-                }
-                // protect user's account by respecting TooManyRequests error
-                else if (ex is HttpRequestException httpException && httpException.StatusCode == HttpStatusCode.TooManyRequests)
-                {
-                    throw;
-                }
-                // retry if there are attempts remaining
-                if (retryCount < maxRetries)
-                {
-                    retryCount++;
-                    var delay = random.Next(minRetryDelay, maxRetryDelay);
-                    logger?.LogWarning(ex.GetBaseException(), "Download failed for file {file}. Attempting {retryCount} retry in {delay} milliseconds.", download.FileName, retryCount.DisplayWithSuffix(), delay);
-                    await Task.Delay(delay, token);
-                }
-                else
-                {
-                    logger?.LogError(ex.GetBaseException(), "Download failed for file {file}. No retries remaining.", download.FileName);
-                    throw;
-                }
-            }
-        }
     }
 
     /// <summary>
@@ -192,11 +151,15 @@ internal class NexusDownloader : IDisposable
         }
 
         token.ThrowIfCancellationRequested();
+
         // construct and send POST request to acquire download url
-        using var client = new HttpClient(handler, false);
+        using var client = new HttpClient(handler, false)
+        {
+            Timeout = TimeSpan.FromSeconds(timeout)
+        };
         client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
 
-        logger?.LogTrace("Sending HTTP POST request for file {file}.", download.FileName);
+        logger?.LogTrace("Sending HTTP POST request for {file}.", download.FileName);
         var request = ConstructRequest(download);
         var response = await request.SendAsync(client, true, token);
         var responseString = await response.ReadAsStringAsync(token);
@@ -234,29 +197,25 @@ internal class NexusDownloader : IDisposable
         }
 
         token.ThrowIfCancellationRequested();
+
         // download the file and write it to disk
         logger?.LogTrace("Starting download for {file}...", download.FileName);
-        using var downloadStream = await client.GetStreamAsync(url, token);
-        using var inputStream = new ProgressStream(downloadStream, progress);
-        //using var file = await downloadFolder.CreateFileAsync(fileName) ?? throw new UnauthorizedAccessException("Unable to create file in download folder.");
+        await using var downloadStream = await client.GetStreamAsync(url, token);
+        await using var inputStream = new ProgressStream(downloadStream, progress);
         var filePath = Path.Combine(downloadFolder, fileName);
-        using var fileStream = File.Open(filePath, FileMode.Create, FileAccess.ReadWrite);
+        await using var fileStream = File.Open(filePath, FileMode.Create, FileAccess.ReadWrite);
+
         if (checkHash)
         {
-            var hash = await inputStream.HashingCopy(fileStream, token, bufferSize);
-            if (!hash.Equals(download.Hash))
-            {
-                logger?.LogError("Hash does not match pre-computed value for {fileName}.", fileName);
-                throw new HashMismatchException($"Hash does not match pre-computed value for {fileName}.\nExpected: {download.Hash}\nComputed: {hash}");
-            }
-            else
-                logger?.LogTrace("Verified hash for file {file}.", fileName);
+            var hash = await inputStream.HashingCopy(fileStream, bufferSize, token);
+            hash.ThrowOnMismatch(download.Hash, fileName, logger);
+            logger?.LogTrace("Verified hash for {file}.", fileName);
         }
         else
             await inputStream.CopyToAsync(fileStream, bufferSize, token);
         await fileStream.FlushAsync(token);
 
-        logger?.LogInformation("Downloaded file {fileName} succesfully.", fileName);
+        logger?.LogInformation("Downloaded {file} succesfully.", fileName);
     }
 
     /// <summary>
@@ -264,7 +223,7 @@ internal class NexusDownloader : IDisposable
     /// </summary>
     private Dictionary<string, long> ScanFolder(string folder)
     {
-        logger?.LogTrace("Scanning folder {folder} for existing files.", folder);
+        logger?.LogInformation("Scanning folder {folder} for existing files.", folder);
         var results = new Dictionary<string, long>();
         foreach (var file in Directory.EnumerateFiles(folder, "*.*", SearchOption.TopDirectoryOnly))
         {

@@ -5,19 +5,21 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.Json.Nodes;
 using WabbajackDownloader.Hashing;
+using WabbajackDownloader.ModList;
 
 namespace WabbajackDownloader.Core;
 
 internal static class ModlistExtractor
 {
-    public static List<NexusDownload> ExtractDownloadLinks(Stream wabbajack, ILogger? logger)
+    public static List<NexusDownload> ExtractDownloadLinks(string wabbajackFile, ILogger? logger)
     {
         var downloads = new List<NexusDownload>();
-        using var file = new ZipArchive(wabbajack, ZipArchiveMode.Read);
+        using var stream = File.Open(wabbajackFile, FileMode.Open, FileAccess.Read);
+        using var file = new ZipArchive(stream, ZipArchiveMode.Read);
 
         // the archive should contain a file named "modlist"
         var entry = file.GetEntry("modlist") ?? throw new InvalidDataException("The wabbajack file does not contain a modlist.");
-        logger?.LogInformation("Extracting downloads from wabbajack file...");
+        logger?.LogInformation("Extracting downloadable mods from {wabbajackFile}.", wabbajackFile);
         var modlist = JsonNode.Parse(entry.Open())?.AsObject();
         if (modlist != null)
         {

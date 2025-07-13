@@ -24,7 +24,7 @@ namespace WabbajackDownloader.Hashing;
 ///     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ///     SOFTWARE.
 /// </summary>
-/// Taken from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
+/// Adapted from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
 public struct HashAlgorithm
 {
     private static readonly IReadOnlyList<ulong> Primes64 =

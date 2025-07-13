@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using WabbajackDownloader.Hashing;
+using WabbajackDownloader.ModList;
 
 namespace WabbajackDownloader.Core;
 

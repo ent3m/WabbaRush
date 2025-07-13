@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using WabbajackDownloader.Common;
 using WabbajackDownloader.Extensions;
 
 namespace WabbajackDownloader.Core;
@@ -9,7 +10,7 @@ namespace WabbajackDownloader.Core;
 /// <summary>
 /// A pool of progress display for nexus download
 /// </summary>
-internal class ProgressPool(Panel panel) : IDisposable
+internal class DownloadProgressPool(Panel panel) : IDisposable
 {
     private readonly Controls container = panel.Children;
     private readonly ConcurrentBag<ProgressDisplay<long>> bag = [];

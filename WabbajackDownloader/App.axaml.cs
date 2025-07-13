@@ -1,11 +1,16 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Threading;
 using WabbajackDownloader.Configuration;
+using WabbajackDownloader.Core;
 using WabbajackDownloader.Logging;
+using WabbajackDownloader.ModList;
 using WabbajackDownloader.Views;
 using Xilium.CefGlue;
 using Xilium.CefGlue.Common;
@@ -17,6 +22,7 @@ namespace WabbajackDownloader
 #pragma warning disable CS8618 // these are created in Initialize()
         private AppSettings settings;
         private ILoggerProvider loggerProvider;
+        private Window splashscreen;
 #pragma warning restore CS8618
 
         public override void Initialize()
@@ -46,11 +52,25 @@ namespace WabbajackDownloader
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
             {
-                var window = new MainWindow(settings, loggerProvider);
-                desktop.MainWindow = window;
+                splashscreen = new Splashscreen();
+                desktop.MainWindow = splashscreen;
             }
 
+            RepositoriesDownloader.FetchRepositoriesAsync(settings.MaxConcurrency, loggerProvider.CreateLogger(nameof(RepositoriesDownloader)), CancellationToken.None)
+                .ContinueWith(r => Dispatcher.UIThread.Post(() => CompleteApplicationStart(r.Result)));
+
             base.OnFrameworkInitializationCompleted();
+        }
+
+        private void CompleteApplicationStart(ModListMetadata[]? repositories)
+        {
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                var window = new MainWindow(repositories, settings, loggerProvider);
+                desktop.MainWindow = window;
+                window.Show();
+                splashscreen.Close();
+            }
         }
     }
 }

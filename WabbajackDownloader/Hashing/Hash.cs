@@ -3,7 +3,7 @@ using System.Buffers.Text;
 
 namespace WabbajackDownloader.Hashing;
 
-/// Taken from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
+/// Adapted from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
 public readonly struct Hash(ulong code) : IEquatable<Hash>, IComparable<Hash>
 {
     private readonly ulong _code = code;
