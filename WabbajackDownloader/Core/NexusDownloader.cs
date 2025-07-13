@@ -199,10 +199,8 @@ internal class NexusDownloader : IDisposable
         token.ThrowIfCancellationRequested();
 
         // download the file and write it to disk
-        logger?.LogTrace("Starting download for {file}...", download.FileName);
-        using var response = await client.GetAsync(url, token);
-        response.EnsureSuccessStatusCode();
-        await using var downloadStream = await response.Content.ReadAsStreamAsync(token);
+        logger?.LogTrace("Starting download for {file}...", fileName);
+        await using var downloadStream = await client.GetStreamAsync(url, token);
         await using var progressStream = new ProgressStream(downloadStream, progress);
         await using var inputStream = new IdleTimeoutStream(progressStream, timeout);
         var filePath = Path.Combine(downloadFolder, fileName);

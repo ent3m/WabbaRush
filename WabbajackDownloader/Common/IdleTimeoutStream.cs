@@ -27,7 +27,7 @@ internal class IdleTimeoutStream(Stream innerStream, TimeSpan idleTimeout) : Str
         {
             return await innerStream.ReadAsync(buffer, idleCts.Token);
         }
-        catch (OperationCanceledException) when (cancellationToken!.IsCancellationRequested)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new TimeoutException($"No data received for {idleTimeout.TotalSeconds} seconds.");
         }
@@ -42,7 +42,7 @@ internal class IdleTimeoutStream(Stream innerStream, TimeSpan idleTimeout) : Str
         {
             return await innerStream.ReadAsync(buffer, offset, count, idleCts.Token);
         }
-        catch (OperationCanceledException) when (cancellationToken!.IsCancellationRequested)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
             throw new TimeoutException($"No data received for {idleTimeout.TotalSeconds} seconds.");
         }

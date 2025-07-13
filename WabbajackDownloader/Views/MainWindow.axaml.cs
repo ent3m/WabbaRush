@@ -181,11 +181,6 @@ public partial class MainWindow : Window
         settings.SaveSettings();
 
         // ready check
-        if (settings.DownloadFolder == null)
-        {
-            infoText.Text = "Please select a download folder.";
-            return;
-        }
         if (settings.UseLocalFile)
         {
             if (settings.WabbajackFile == null)
@@ -201,6 +196,11 @@ public partial class MainWindow : Window
                 infoText.Text = "Please select a mod list.";
                 return;
             }
+        }
+        if (settings.DownloadFolder == null)
+        {
+            infoText.Text = "Please select a download folder.";
+            return;
         }
         if (container == null)
         {
@@ -228,6 +228,7 @@ public partial class MainWindow : Window
                 var metadata = (ModListMetadata)modlistBox.SelectedItem!;
                 infoText.Text = "Downloading wabbajack file...";
                 progressContainer.IsVisible = true;
+                downloadProgressBar.IsVisible = true;
                 downloadProgressBar.Maximum = metadata.DownloadMetadata.Size;
                 downloadProgressBar.Value = 0;
                 downloadProgressBar.ProgressTextFormat = metadata.DownloadMetadata.Size.DisplayByteSize() + " ({1:0}%)";
@@ -271,6 +272,7 @@ public partial class MainWindow : Window
         {
             infoText.Text = "Downloading...";
             progressContainer.IsVisible = true;
+            downloadProgressBar.IsVisible = true;
             downloadProgressBar.Maximum = downloads.Count;
             downloadProgressBar.Value = 0;
             downloadProgressBar.ProgressTextFormat = "{0}/{3} ({1:0}%)";
