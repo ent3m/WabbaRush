@@ -226,12 +226,6 @@ public partial class MainWindow : Window
             {
                 var modlistDownloader = new ModListDownloader(settings, circuitBreaker, loggerProvider?.CreateLogger(nameof(ModListDownloader)));
                 var metadata = (ModListMetadata)modlistBox.SelectedItem!;
-                infoText.Text = "Downloading wabbajack file...";
-                progressContainer.IsVisible = true;
-                downloadProgressBar.IsVisible = true;
-                downloadProgressBar.Maximum = metadata.DownloadMetadata.Size;
-                downloadProgressBar.Value = 0;
-                downloadProgressBar.ProgressTextFormat = metadata.DownloadMetadata.Size.DisplayByteSize() + " ({1:0}%)";
                 var progressLock = new Lock();
                 var progress = new Progress<long>(i =>
                 {
@@ -240,13 +234,20 @@ public partial class MainWindow : Window
                         downloadProgressBar.Value += i;
                     }
                 });
+
+                infoText.Text = "Downloading wabbajack file...";
+                progressContainer.IsVisible = true;
+                downloadProgressBar.Maximum = metadata.DownloadMetadata.Size;
+                downloadProgressBar.Value = 0;
+                downloadProgressBar.ProgressTextFormat = metadata.DownloadMetadata.Size.DisplayByteSize() + " ({1:0}%)";
+
                 logger?.LogTrace("Getting wabbajack file for {title} from Wabbajack CDN.", metadata.Title);
                 file = await modlistDownloader.DownloadWabbajackAsync(metadata, progress, downloadTokenSource.Token);
             }
 
-            logger?.LogTrace("Extracting mods from wabbajack file.");
             infoText.Text = "Extracting download links...";
             await Task.Delay(10);   // pause for the UI to update
+            logger?.LogTrace("Extracting mods from wabbajack file.");
             downloads = ExtractDownloads(file);
         }
         catch (Exception ex)
@@ -255,11 +256,11 @@ public partial class MainWindow : Window
             infoText.Text = "Unable to extract download links from wabbajack file. Check log for more info.";
             settings.WabbajackFile = null;
             fileText.Text = selectFileMessage;
+
             progressContainer.IsVisible = false;
             RestoreControls();
             return;
         }
-        logger?.LogTrace("Extraction completed. Downloading individual mods.");
 
         // prepare downloader
         var downloader = new NexusDownloader(settings.DownloadFolder, downloads, container,
@@ -272,11 +273,13 @@ public partial class MainWindow : Window
         {
             infoText.Text = "Downloading...";
             progressContainer.IsVisible = true;
-            downloadProgressBar.IsVisible = true;
             downloadProgressBar.Maximum = downloads.Count;
             downloadProgressBar.Value = 0;
             downloadProgressBar.ProgressTextFormat = "{0}/{3} ({1:0}%)";
+
+            logger?.LogTrace("Extraction completed. Downloading individual mods.");
             await downloader.DownloadAsync(new Progress<int>(i => downloadProgressBar.Value = i), downloadTokenSource.Token);
+
             infoText.Text = "All done!";
             logger?.LogInformation("Download process completed.");
         }

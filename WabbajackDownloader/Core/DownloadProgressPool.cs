@@ -75,7 +75,6 @@ internal class DownloadProgressPool(Panel panel) : IDisposable
 
     public void Dispose()
     {
-        container.Clear();
         bag.Clear();
     }
 }
