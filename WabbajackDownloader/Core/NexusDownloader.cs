@@ -78,7 +78,7 @@ internal class NexusDownloader : IDisposable
         {
             int i = Interlocked.Increment(ref pos);
             logger?.LogTrace("File {count}/{total} is queueing for download.", i, downloads.Count);
-            // semaphore should not listen for linked token, otherwise the only exception getting thrown will be OperationCanceledException
+            // semaphore should not listen for linked token, or the only exception getting thrown will be OperationCanceledException
             await semaphore.WaitAsync(token).ConfigureAwait(false);
 
             // cancel all remaining downloads if one download fails
