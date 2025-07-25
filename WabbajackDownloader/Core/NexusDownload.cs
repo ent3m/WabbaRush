@@ -7,7 +7,7 @@ namespace WabbajackDownloader.Core;
 
 internal record NexusDownload(GameData Game, string FileName, string ModID, string FileID, long FileSize, Hash Hash)
 {
-    public string GameID => Game.NexusGameID.ToString();
+    public string GameID => Game.NexusGameId.ToString();
 
     public string Url
     {
