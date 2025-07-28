@@ -1,7 +1,8 @@
-# Wabbajack Downloader
-An automatic downloader for [Wabbajack](https://github.com/wabbajack-tools/wabbajack). It works by extracting the required mods from wabbajack files and download them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
+![Image](https://shields.io/badge/2.3-WabbaRush-blue)
+# WabbaRush
+An automatic downloader for [Wabbajack](https://github.com/wabbajack-tools/wabbajack). It works by extracting mods from wabbajack file and download them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
 # Usage
-![Image](https://raw.githubusercontent.com/ent3m/WabbajackDownloader/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
+![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
 
 1. Select a .wabbajack file.<br>
 *Or*<br>
@@ -14,7 +15,8 @@ Wait until the page is fully loaded, then close the Nexus window.
 You can fine-tune the program's behaviors in **settings.json**. The program needs to be re-launched to read any changes.
 
 # Installation
-Download the latest [release](https://github.com/ent3m/WabbajackDownloader/releases), extract, and run **WabbajackDownloader.exe**.<br><br>
+Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
+Extract and run **WabbaRush.exe**.<br><br>
 Requires **Windows 10 x64** or newer.<br><br>
 To build your own binaries, you will need to supply a *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. These were not included for copyright reasons.
 
