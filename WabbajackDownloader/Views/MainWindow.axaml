@@ -140,10 +140,10 @@
                     VerticalAlignment="Center">
           <Image Classes="wabbajack"/>
           <TextBlock FontFamily="{StaticResource BannerFont}"
-                     FontSize="32"
+                     FontSize="46"
                      FontWeight="Heavy"
                      Foreground="{StaticResource MainColor}"
-                     Text="Wabbajack Downloader"/>
+                     Text="WabbaRush"/>
           <Image Classes="wabbajack"/>
         </StackPanel>
       </Button>

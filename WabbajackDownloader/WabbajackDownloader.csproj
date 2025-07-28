@@ -10,10 +10,13 @@
   <PropertyGroup Label="ApplicationConfiguration">
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\wabbajack.ico</ApplicationIcon>
-    <RepositoryType>https://github.com/ent3m/WabbajackDownloader</RepositoryType>
+    <RepositoryType>https://github.com/ent3m/WabbaRush</RepositoryType>
+    <Authors>Ent3m</Authors>
+    <Version>2.3</Version>
   </PropertyGroup>
 
   <PropertyGroup Label="PublishConfiguration" Condition="'$(Configuration)'=='Release'">
+    <AssemblyName>WabbaRush</AssemblyName>
     <PublishAot>true</PublishAot>
     <PublishTrimmed>True</PublishTrimmed>
     <TrimMode>link</TrimMode>
