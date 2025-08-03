@@ -159,7 +159,7 @@ internal class NexusDownloader : IDisposable
         };
         client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
 
-        logger?.LogTrace("Sending HTTP POST request for {file}.", download.FileName);
+        logger?.LogTrace("Sending HTTP POST request for download: {download}", download.ToString());
         var request = ConstructRequest(download);
         var content = await request.SendAsync(client, true, token);
         var contentString = await content.ReadAsStringAsync(token);

@@ -43,7 +43,7 @@ namespace WabbajackDownloader
             loggerProvider = new DebugLoggerProvider();
 #else
             var logPath = Path.Combine(AppContext.BaseDirectory, "debug.log");
-            loggerProvider = new FileLoggerProvider(logPath, settings.LogLevel);
+            loggerProvider = new FileLoggerProvider(logPath, settings.LogLevel, settings.AppendDebugLog);
 #endif
             AvaloniaXamlLoader.Load(this);
         }
