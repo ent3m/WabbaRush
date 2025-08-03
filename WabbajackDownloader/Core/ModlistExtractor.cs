@@ -89,7 +89,7 @@ internal static class ModlistExtractor
         modID = ExtractValue(reader.ReadLine());
         fileID = ExtractValue(reader.ReadLine());
 
-        return !(gameName == string.Empty && modID == string.Empty && fileID == string.Empty);
+        return gameName != string.Empty && modID != string.Empty && fileID != string.Empty;
 
         static string ExtractValue(ReadOnlySpan<char> line)
         {
