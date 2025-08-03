@@ -11,12 +11,12 @@ internal class FileLoggerProvider : ILoggerProvider
     private readonly LogLevel minLevel;
     private readonly Lock lockObject = new();
 
-    public FileLoggerProvider(string filePath, LogLevel minLevel = LogLevel.Trace)
+    public FileLoggerProvider(string filePath, LogLevel minLevel, bool append)
     {
         this.minLevel = minLevel;
         var fullPath = Path.GetFullPath(filePath);
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
-        writer = new StreamWriter(fullPath, append: true)
+        writer = new StreamWriter(fullPath, append)
         {
             AutoFlush = true
         };

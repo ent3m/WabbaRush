@@ -12,7 +12,7 @@
     <ApplicationIcon>Assets\wabbajack.ico</ApplicationIcon>
     <RepositoryType>https://github.com/ent3m/WabbaRush</RepositoryType>
     <Authors>Ent3m</Authors>
-    <Version>2.3</Version>
+    <Version>2.4</Version>
   </PropertyGroup>
 
   <PropertyGroup Label="PublishConfiguration" Condition="'$(Configuration)'=='Release'">

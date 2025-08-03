@@ -23,10 +23,11 @@ public class AppSettings
     public int DelayJitter { get; set; } = 1000;
     public int HttpTimeout { get; set; } = 30;
     public bool CheckHash { get; set; } = true;
+    public bool AppendDebugLog { get; set; } = false;
     public string UserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0";
     public string ModListDownloadPath { get; set; } = "downloaded-modlists";
-    public LogLevel LogLevel { get; set; } = LogLevel.Information;
-    public CefLogSeverity CefLogLevel { get; set; } = CefLogSeverity.Error;
+    public LogLevel LogLevel { get; set; } = LogLevel.Warning;
+    public CefLogSeverity CefLogLevel { get; set; } = CefLogSeverity.Warning;
 
     private string? filePath;
 
