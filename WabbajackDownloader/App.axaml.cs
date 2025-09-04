@@ -34,8 +34,9 @@ namespace WabbajackDownloader
             // manage cef logging
             CefRuntimeLoader.Initialize(new CefSettings()
             {
-                LogFile = Path.Combine(Directory.GetCurrentDirectory(), "cef-debug.log"),
-                LogSeverity = settings.CefLogLevel
+                LogFile = Path.Combine(AppContext.BaseDirectory, "cef-debug.log"),
+                LogSeverity = settings.CefLogLevel,
+                Locale = "en-US",
             });
 
             // configure logging

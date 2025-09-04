@@ -359,8 +359,6 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-# Fody - auto-generated XML schema
-FodyWeavers.xsd
 /WabbajackDownloader/Assets/wabbajack.ico
 /WabbajackDownloader/Assets/wabbajack.png
 /WabbajackDownloader/Assets/MountainKingRegular.ttf

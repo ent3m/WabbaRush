@@ -5,15 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
+using WabbajackDownloader.Cef;
 using WabbajackDownloader.Common;
 using WabbajackDownloader.Configuration;
-using WabbajackDownloader.Exceptions;
 using WabbajackDownloader.Extensions;
 using WabbajackDownloader.Hashing;
-using WabbajackDownloader.Http;
 
 namespace WabbajackDownloader.Core;
 
@@ -26,7 +24,6 @@ internal class NexusDownloader : IDisposable
     private readonly long maxDownloadSize;
     private readonly int bufferSize;
     private readonly bool checkHash;
-    private readonly string userAgent;
     private readonly bool discoverExistingFiles;
     private readonly TimeSpan timeout;
     private readonly ILogger? logger;
@@ -34,29 +31,27 @@ internal class NexusDownloader : IDisposable
     private readonly CircuitBreaker circuitBreaker;
 
     private Dictionary<string, long>? existingFiles;
-    private readonly HttpClientHandler handler;
+    private readonly HttpClient client;
     private readonly SemaphoreSlim semaphore;
 
-    public NexusDownloader(string downloadFolder, IReadOnlyList<NexusDownload> downloads, CookieContainer cookieContainer,
-        AppSettings settings, ILogger? logger, DownloadProgressPool? progressPool, CircuitBreaker circuitBreaker)
+    private readonly AutoDownloadCefBrowser browser;
+
+    public NexusDownloader(string downloadFolder, IReadOnlyList<NexusDownload> downloads,
+        AppSettings settings, ILogger? logger, DownloadProgressPool? progressPool,
+        CircuitBreaker circuitBreaker, AutoDownloadCefBrowser browser)
     {
         this.downloadFolder = downloadFolder;
         this.downloads = downloads;
         this.maxDownloadSize = settings.MaxDownloadSize * 1024 * 1024;
         bufferSize = settings.BufferSize;
         checkHash = settings.CheckHash;
-        userAgent = settings.UserAgent;
         discoverExistingFiles = settings.DiscoverExistingFiles;
         timeout = TimeSpan.FromSeconds(settings.HttpTimeout);
         this.logger = logger;
         this.progressPool = progressPool;
         this.circuitBreaker = circuitBreaker;
-
-        handler = new HttpClientHandler()
-        {
-            CookieContainer = cookieContainer,
-            UseCookies = true
-        };
+        this.browser = browser;
+        this.client = new HttpClient();
         semaphore = new SemaphoreSlim(settings.MaxConcurrency);
     }
 
@@ -98,7 +93,7 @@ internal class NexusDownloader : IDisposable
                         static ex =>
                         {
                             // these are most likely user errors. it's useless to retry here
-                            if (ex is InvalidJsonResponseException or UnauthorizedAccessException)
+                            if (ex is UnauthorizedAccessException)
                                 return true;
 
                             // protect user's account by respecting TooManyRequests error
@@ -144,6 +139,7 @@ internal class NexusDownloader : IDisposable
             return;
         }
         // skip if file already exists
+        // a file exists if its name and size matches the record in wabbajack metadata
         if (existingFiles != null && existingFiles.TryGetValue(download.FileName, out long size) && size == download.FileSize)
         {
             logger?.LogInformation("File {download.FileName} already exists. Skipping ahead.", download.FileName);
@@ -152,43 +148,32 @@ internal class NexusDownloader : IDisposable
 
         token.ThrowIfCancellationRequested();
 
-        // construct and send POST request to acquire download url
-        using var client = new HttpClient(handler, false)
+        // acquire download url with timeout
+        logger?.LogTrace("Attempting to fetch download Url for {download.Filename}.", download.FileName);
+        var url = await browser.GetDownloadUrlAsync(download, token).WaitAsync(timeout, token);
+        // acquire file name and file size from header
+        string? fileName = default;
+        long? fileSize = default;
+        using (var headerResponse = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token))
         {
-            Timeout = timeout
-        };
-        client.DefaultRequestHeaders.UserAgent.TryParseAdd(userAgent);
-
-        logger?.LogTrace("Sending HTTP POST request for download: {download}", download.ToString());
-        var request = ConstructRequest(download);
-        var content = await request.SendAsync(client, true, token);
-        var contentString = await content.ReadAsStringAsync(token);
-
-        // interpret download url and extract file name
-        string fileName;
-        string url;
-        try
-        {
-            var jsonResponse = JsonNode.Parse(contentString)!.AsObject();
-            url = jsonResponse["url"]!.ToString();
-            fileName = GetFileName(url);
+            // attempt to get suggested file name and file size from server
+            if (headerResponse.IsSuccessStatusCode)
+            {
+                fileSize = headerResponse.Content.Headers.ContentLength;
+                fileName = headerResponse.Content.Headers.ContentDisposition?.FileName;
+            }
         }
-        catch (Exception ex)
-        {
-            throw new InvalidJsonResponseException($"Http response does not contain download url: {contentString}", ex);
-        }
+        // fall back to file name extraction if there is no suggested file name
+        fileName ??= GetFileName(url);
 
         // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
         if (download.FileName != fileName)
         {
             logger?.LogTrace("File {fileName} does not match wabbajack file name. Checking again if the file already exists.", fileName);
 
-            if (existingFiles != null && existingFiles.ContainsKey(fileName))
+            if (existingFiles != null && existingFiles.TryGetValue(fileName, out var localSize))
             {
-                // there is no file size, so we have to fetch file size from download url
-                using var headerResponse = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);
-                var sizeFromHeader = headerResponse.Content.Headers.ContentLength;
-                if (sizeFromHeader != null && sizeFromHeader == download.FileSize)
+                if (fileSize != null && fileSize == localSize)
                 {
                     logger?.LogInformation("File {fileName} already exists. Skipping ahead.", fileName);
                     return;
@@ -242,30 +227,6 @@ internal class NexusDownloader : IDisposable
     }
 
     /// <summary>
-    /// Construct a HTTP POST request for www.nexusmods.com
-    /// </summary>
-    private static HttpRequest ConstructRequest(NexusDownload download)
-    {
-        var request = new HttpRequest()
-        {
-            Method = HttpMethod.Post,
-            BaseUrl = "https://www.nexusmods.com/Core/Libs/Common/Managers/Downloads",
-            Query = new()
-            {
-                ["GenerateDownloadUrl"] = string.Empty
-            },
-            Content = new()
-            {
-                Type = ContentType.FormUrl,
-                ["fid"] = download.FileID,
-                ["game_id"] = download.GameID
-            },
-            ["origin"] = "https://www.nexusmods.com"
-        };
-        return request;
-    }
-
-    /// <summary>
     /// Extract file name from a nexus download response
     /// </summary>
     private static string GetFileName(ReadOnlySpan<char> url)
@@ -289,7 +250,7 @@ internal class NexusDownloader : IDisposable
 
     public void Dispose()
     {
-        handler.Dispose();
+        client.Dispose();
         semaphore.Dispose();
         progressPool?.Dispose();
     }

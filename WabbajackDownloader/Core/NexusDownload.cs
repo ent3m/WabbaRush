@@ -5,7 +5,7 @@ using WabbajackDownloader.ModList;
 
 namespace WabbajackDownloader.Core;
 
-internal record NexusDownload(GameData Game, string FileName, string ModID, string FileID, long FileSize, Hash Hash)
+record NexusDownload(GameData Game, string FileName, string ModID, string FileID, long FileSize, Hash Hash)
 {
     public string GameID => Game.NexusGameId.ToString();
 

@@ -7,13 +7,12 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using WabbajackDownloader.Cef;
 using WabbajackDownloader.Common;
 using WabbajackDownloader.Configuration;
 using WabbajackDownloader.Core;
-using WabbajackDownloader.Exceptions;
 using WabbajackDownloader.Extensions;
 using WabbajackDownloader.ModList;
 
@@ -50,8 +49,9 @@ public partial class MainWindow : Window
     private readonly ILoggerProvider? loggerProvider;
     private readonly ILogger? logger;
 
-    private CookieContainer? container;
     private readonly CancellationTokenSource downloadTokenSource = new();
+
+    private AutoDownloadCefBrowser? browser;
 
 #if DEBUG
     // parameterless constructor for xaml previewer
@@ -167,10 +167,17 @@ public partial class MainWindow : Window
     /// <summary>
     /// Display a nexus signin window and attempt to retrieve session cookies
     /// </summary>
-    private async void DisplaySigninWindow(object sender, RoutedEventArgs args)
+    private void DisplaySigninWindow(object sender, RoutedEventArgs args)
     {
-        var signinWindow = new NexusSigninWindow(settings.NexusLandingPage, loggerProvider?.CreateLogger(nameof(NexusSigninWindow)));
-        container = await signinWindow.ShowAndGetCookiesAsync(this);
+        if (browser == null)
+        {
+            var signinWindow = new NexusSigninWindow(settings.NexusLandingPage, loggerProvider?.CreateLogger(nameof(NexusSigninWindow)));
+            browser = signinWindow.ShowAndGetBrowser(this);
+        }
+        else
+        {
+            browser.Owner.Show(this);
+        }
     }
 
     /// <summary>
@@ -202,7 +209,7 @@ public partial class MainWindow : Window
             infoText.Text = "Please select a download folder.";
             return;
         }
-        if (container == null)
+        if (browser == null)
         {
             infoText.Text = "Please login to your nexus account.";
             return;
@@ -263,10 +270,10 @@ public partial class MainWindow : Window
         }
 
         // prepare downloader
-        var downloader = new NexusDownloader(settings.DownloadFolder, downloads, container,
+        var downloader = new NexusDownloader(settings.DownloadFolder, downloads,
             settings, loggerProvider?.CreateLogger(nameof(NexusDownloader)),
             new DownloadProgressPool(progressContainer),
-            circuitBreaker);
+            circuitBreaker, browser);
 
         // begin downloading mods
         try
@@ -286,12 +293,6 @@ public partial class MainWindow : Window
         catch (OperationCanceledException ex)
         {
             logger?.LogInformation(ex, "Download process has been canceled.");
-        }
-        catch (InvalidJsonResponseException ex)
-        {
-            logger?.LogError(ex, "Download process has stopped due to invalid or missing credentials.");
-            infoText.Text = "Cannot download from Nexusmods due to invalid or missing credentials. Please login again.";
-            container = null;
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -350,10 +351,17 @@ public partial class MainWindow : Window
     // Cancel ongoing downloads and save settings before closing
     protected override void OnClosing(WindowClosingEventArgs e)
     {
+        logger?.LogTrace("Preparing to shut down...");
+        logger?.LogTrace("Saving settings.");
+        settings.SaveSettings();
+        logger?.LogTrace("Cancelling remaining tasks.");
         downloadTokenSource.Cancel();
         downloadTokenSource.Dispose();
-        Xilium.CefGlue.CefRuntime.Shutdown();
-        settings.SaveSettings();
+        logger?.LogTrace("Closing nexus window.");
+        browser?.Owner.Close();
+        logger?.LogTrace("Disposing nexus window.");
+        browser?.Dispose();
+        logger?.LogTrace("Calling base.OnClosing");
         base.OnClosing(e);
     }
 }

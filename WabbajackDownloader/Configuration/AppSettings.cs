@@ -11,10 +11,10 @@ public class AppSettings
     public string? DownloadFolder { get; set; }
     public string? WabbajackFile { get; set; }
     public string? SelectedModList { get; set; }
-    public bool UseLocalFile { get; set; } = true;
+    public bool UseLocalFile { get; set; } = false;
     public int MaxConcurrency { get; set; } = 3;
     public int MaxRetries { get; set; } = 3;
-    public int MaxDownloadSize { get; set; } = 1000;
+    public int MaxDownloadSize { get; set; } = 2000;
     public string NexusLandingPage { get; set; } = "https://www.nexusmods.com/skyrimspecialedition/mods/12604";
     public bool DiscoverExistingFiles { get; set; } = true;
     public int BufferSize { get; set; } = 512 * 1024;
@@ -24,7 +24,6 @@ public class AppSettings
     public int HttpTimeout { get; set; } = 30;
     public bool CheckHash { get; set; } = true;
     public bool AppendDebugLog { get; set; } = false;
-    public string UserAgent { get; set; } = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0";
     public string ModListDownloadPath { get; set; } = "downloaded-modlists";
     public LogLevel LogLevel { get; set; } = LogLevel.Warning;
     public CefLogSeverity CefLogLevel { get; set; } = CefLogSeverity.Warning;

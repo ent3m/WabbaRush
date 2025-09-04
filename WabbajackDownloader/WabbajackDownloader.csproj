@@ -11,20 +11,21 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\wabbajack.ico</ApplicationIcon>
     <RepositoryType>https://github.com/ent3m/WabbaRush</RepositoryType>
-    <Authors>Ent3m</Authors>
-    <Version>2.4</Version>
+    <Authors>Entem</Authors>
+    <Version>2.5</Version>
   </PropertyGroup>
 
   <PropertyGroup Label="PublishConfiguration" Condition="'$(Configuration)'=='Release'">
     <AssemblyName>WabbaRush</AssemblyName>
-    <PublishAot>true</PublishAot>
-    <PublishTrimmed>True</PublishTrimmed>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishAot>false</PublishAot>
+    <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>link</TrimMode>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
-    <!--        <SelfContained>true</SelfContained>-->
   </PropertyGroup>
 
-  <ItemGroup Label="ImportLib">
+  <ItemGroup Label="ImportLib" Condition="'$(PublishAot)' == 'true'">
     <DirectPInvoke Include="libHarfBuzzSharp" />
     <NativeLibrary Include="native\libHarfBuzzSharp.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
     <DirectPInvoke Include="libSkiaSharp" />
@@ -36,27 +37,30 @@
     <LinkerArg Include="gdi32.lib;synchronization.lib;d3d9.lib;dxgi.lib;dxguid.lib" />
   </ItemGroup>
 
+  <ItemGroup Label="TrimmerRootConfiguration" Condition="'$(Configuration)'=='Release'">
+    <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
+    <TrimmerRootAssembly Include="WabbaRush" />
+    <TrimmerAssembly Include="Xilium.CefGlue.Common.Shared">
+      <Action>skip</Action>
+    </TrimmerAssembly>
+  </ItemGroup>
+
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
 
-  <ItemGroup Label="TrimmerRootConfiguration" Condition="'$(Configuration)'=='Release'">
-    <TrimmerRootAssembly Include="Avalonia.Themes.Fluent" />
-    <!--        <TrimmerRootAssembly Include="Avalonia.Themes.Default" />-->
-  </ItemGroup>
-
   <ItemGroup Label="PackageReferences">
-    <PackageReference Include="Avalonia" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.2" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.2" />
+    <PackageReference Include="Avalonia" Version="11.3.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.5" />
     <!--        <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.1" />-->
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
-    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.2">
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.5">
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CefGlue.Avalonia" Version="120.6099.211" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6" />
-    <PackageReference Include="System.Text.Json" Version="9.0.6" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="System.Text.Json" Version="9.0.8" />
   </ItemGroup>
 </Project>
