@@ -1,6 +1,6 @@
-[![Image](https://shields.io/badge/v2.4-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.4)
+[![Image](https://shields.io/badge/v2.5-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.5)
 # Description
-WabbaRush is an automatic downloader for **Wabbajack**. It works by extracting mods from wabbajack file and download them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
+WabbaRush is an automatic downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
 # Usage
 ![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
 
@@ -8,11 +8,12 @@ WabbaRush is an automatic downloader for **Wabbajack**. It works by extracting m
 *Or*<br>
 Uncheck **Use local wabbajack file** in **Options** to download a mod list from the gallery.
 2. Select a download folder.
-3. Login to Nexus account. After logging in, you'll be taken to *SkyUI* page.<br>
-Wait until the page is fully loaded, then close the Nexus window.
+3. Login to Nexus account.<br>
+Wait until you are taken to *SkyUI* page, then close the Nexus window.
 5. Click on **Download** and wait.<br>
 
-You can fine-tune the program's behaviors in **settings.json**. The program needs to be re-launched to read any changes.
+If the app was closed while downloading, it will automatically search for downloaded file and attempt to resume an incomplete download.<br>
+You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.
 
 # Installation
 Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
