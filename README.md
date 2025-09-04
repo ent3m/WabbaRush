@@ -12,7 +12,7 @@ Uncheck **Use local wabbajack file** in **Options** to download a mod list from 
 Wait until you are taken to *SkyUI* page, then close the Nexus window.
 5. Click on **Download** and wait.<br>
 
-The app will automatically search for downloaded file and resume an incomplete mod list download.<br>
+The app will automatically search for downloaded files and resumes an unfisnished mod list download.<br>
 You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.
 
 # Installation
