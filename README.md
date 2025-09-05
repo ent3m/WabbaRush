@@ -21,6 +21,10 @@ Extract and run **WabbaRush.exe**.<br><br>
 Requires **Windows 10 x64** or newer.<br><br>
 To build your own binaries, you will need to supply a *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. These were not included for copyright reasons.
 
+# Known Issues
+Sometimes you get connection timeout in a long download session. When this happens, just close the app, open a new instance and resume downloading.
+Unfortunately, this is an issue with CefGlue and there's nothing I can do about it.
+
 # Disclaimer
 This software is provided for educational, research, and personal use only. It is not officially affiliated, endorsed, or supported by Nexus Mods, Wabbajack, or any other third-party entities. The developer of this application does not endorse or promote any use that would violate the terms of service, policies, or legal rights of any third parties, including Nexus Mods or any other service providers.
 
