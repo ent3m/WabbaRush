@@ -1,6 +1,6 @@
 [![Image](https://shields.io/badge/v2.5.1-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.5.1)
 # Description
-WabbaRush is an automatic downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
+WabbaRush is a downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
 # Usage
 ![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
 
