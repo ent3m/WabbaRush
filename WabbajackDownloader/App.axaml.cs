@@ -27,23 +27,25 @@ namespace WabbajackDownloader
 
         public override void Initialize()
         {
+            var baseDir = AppContext.BaseDirectory;
             // load app settings
-            var settingsPath = Path.Combine(AppContext.BaseDirectory, "settings.json");
+            var settingsPath = Path.Combine(baseDir, "settings.json");
             settings = AppSettings.LoadOrGetDefaultSettings(settingsPath);
 
             // manage cef logging
             CefRuntimeLoader.Initialize(new CefSettings()
             {
-                LogFile = Path.Combine(AppContext.BaseDirectory, "cef-debug.log"),
+                LogFile = Path.Combine(baseDir, "cef-debug.log"),
                 LogSeverity = settings.CefLogLevel,
                 Locale = "en-US",
+                LocalesDirPath = Path.Combine(baseDir, "locales"),
             });
 
             // configure logging
 #if DEBUG
             loggerProvider = new DebugLoggerProvider();
 #else
-            var logPath = Path.Combine(AppContext.BaseDirectory, "debug.log");
+            var logPath = Path.Combine(baseDir, "debug.log");
             loggerProvider = new FileLoggerProvider(logPath, settings.LogLevel, settings.AppendDebugLog);
 #endif
             AvaloniaXamlLoader.Load(this);

@@ -26,7 +26,7 @@ public class AppSettings
     public bool AppendDebugLog { get; set; } = false;
     public string ModListDownloadPath { get; set; } = "downloaded-modlists";
     public LogLevel LogLevel { get; set; } = LogLevel.Information;
-    public CefLogSeverity CefLogLevel { get; set; } = CefLogSeverity.Warning;
+    public CefLogSeverity CefLogLevel { get; set; } = CefLogSeverity.Error;
 
     private string? filePath;
 

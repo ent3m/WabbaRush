@@ -64,13 +64,59 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
         if (e.Frame.IsMain)
         {
             e.Frame.ExecuteJavaScript("""
-                (function() {
-                    var btn = document.getElementById('slowDownloadButton') 
-                           || document.querySelector('a[data-download-url], button[data-download-url]');
-                    if (btn) {
-                        window.countdown = function(seconds, callback) { callback(); };
-                        btn.click();
+                ;(function() {
+                    function isNexusFilePage() {
+                        const url = new URL(location.href);
+                        return url.hostname.endsWith('nexusmods.com') &&
+                               url.searchParams.has('file_id');
                     }
+
+                	function clickButton() {
+                		const btn = document.getElementById('slowDownloadButton')
+                				   || document.querySelector('a[data-download-url], button[data-download-url]');
+                		btn.click();
+                	}
+
+                    if (!isNexusFilePage()) return;
+
+                	const section = document.querySelector('section.modpage');
+                	if (!section) {
+                		clickButton();
+                		return;
+                	}
+
+                	const game_id = section.dataset.gameId;
+                	const params = new URLSearchParams(window.location.search);
+                	const file_id = params.get('file_id') || params.get('id');
+                    if (!file_id || !game_id) {
+                        clickButton();
+                        return;
+                    }
+
+                	if (!window.jQuery || typeof jQuery.ajax !== 'function') {
+                		clickButton();
+                		return;
+                	}
+                	$.ajax(
+                		{
+                			type: "POST",
+                			url: "/Core/Libs/Common/Managers/Downloads?GenerateDownloadUrl",
+                			data: {
+                				fid: file_id,
+                				game_id: game_id,
+                			},
+                			success: function (data) {
+                				if (data && data.url) {
+                					window.location.href = data.url;
+                				} else {
+                					clickButton();
+                				}
+                			},
+                			error: function () {
+                				clickButton();
+                			}
+                		}
+                	);
                 })();
                 """,
                 e.Frame.Url, 0);
