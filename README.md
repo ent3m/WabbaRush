@@ -1,6 +1,6 @@
-[![Image](https://shields.io/badge/v2.4-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.4)
+[![Image](https://shields.io/badge/v2.5-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.5)
 # Description
-WabbaRush is an automatic downloader for **Wabbajack**. It works by extracting mods from wabbajack file and download them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
+WabbaRush is an automatic downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
 # Usage
 ![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
 
@@ -8,17 +8,22 @@ WabbaRush is an automatic downloader for **Wabbajack**. It works by extracting m
 *Or*<br>
 Uncheck **Use local wabbajack file** in **Options** to download a mod list from the gallery.
 2. Select a download folder.
-3. Login to Nexus account. After logging in, you'll be taken to *SkyUI* page.<br>
-Wait until the page is fully loaded, then close the Nexus window.
+3. Login to Nexus account.<br>
+Wait until you are taken to *SkyUI* page, then close the Nexus window.
 5. Click on **Download** and wait.<br>
 
-You can fine-tune the program's behaviors in **settings.json**. The program needs to be re-launched to read any changes.
+The app will automatically search for downloaded files and resumes an unfisnished mod list download.<br>
+You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.
 
 # Installation
 Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
 Extract and run **WabbaRush.exe**.<br><br>
 Requires **Windows 10 x64** or newer.<br><br>
 To build your own binaries, you will need to supply a *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. These were not included for copyright reasons.
+
+# Known Issues
+Sometimes you get connection timeout in a long download session. When this happens, just close the app, open a new instance and resume downloading.
+Unfortunately, this is an issue with CefGlue and there's nothing I can do about it.
 
 # Disclaimer
 This software is provided for educational, research, and personal use only. It is not officially affiliated, endorsed, or supported by Nexus Mods, Wabbajack, or any other third-party entities. The developer of this application does not endorse or promote any use that would violate the terms of service, policies, or legal rights of any third parties, including Nexus Mods or any other service providers.
