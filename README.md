@@ -4,16 +4,16 @@ WabbaRush is a downloader for **Wabbajack**. It extracts mods from wabbajack fil
 # Usage
 ![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
 
-1. Select a .wabbajack file.<br>
+1. Select a wabbajack mod list.<br>
 *Or*<br>
-Uncheck **Use local wabbajack file** in **Options** to download a mod list from the gallery.
+Check **Use local wabbajack file** in **Options** to select a file on disk.
 2. Select a download folder.
 3. Login to Nexus account.<br>
 Wait until you are taken to *SkyUI* page, then close the Nexus window.
 5. Click on **Download** and wait.<br>
 
-The app will automatically search for downloaded files and resumes an unfisnished mod list download.<br>
-You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.
+You can also watch the [video tutorial](https://youtu.be/1pPh5ZbQRUs).<br>
+You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.<br>
 
 # Installation
 Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
