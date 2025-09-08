@@ -12,7 +12,7 @@ Check **Use local wabbajack file** in **Options** to select a file on disk.
 Wait until you are taken to *SkyUI* page, then close the Nexus window.
 5. Click on **Download** and wait.<br>
 
-You can also watch the [video tutorial](https://youtu.be/1pPh5ZbQRUs).<br>
+Check out the [video tutorial](https://youtu.be/1pPh5ZbQRUs).<br>
 You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.<br>
 
 # Installation
