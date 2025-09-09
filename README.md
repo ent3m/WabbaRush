@@ -1,6 +1,6 @@
 [![Image](https://shields.io/badge/v2.5.1-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.5.1)
 # Description
-WabbaRush is a downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click on *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
+WabbaRush is a downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
 # Usage
 ![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
 
@@ -19,11 +19,11 @@ You can fine-tune the app's behaviors in **settings.json**. The app needs to be 
 Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
 Extract and run **WabbaRush.exe**.<br><br>
 Requires **Windows 10 x64** or newer.<br><br>
-To build your own binaries, you will need to supply a *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. These were not included for copyright reasons.
+To build your own binaries, you will need to supply *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. These were not included for copyright reasons.
 
 # Known Issues
-- Sometimes you get *connection timeout* in a long download session. This is caused by the browser freezing/unable to load download page. When it happens, restart the app and resume downloading.
-Unfortunately, this is an issue with CefGlue and there's nothing I can do to about it.
+- Sometimes you get **connection timeout** in a long download session. This is caused by the browser freezing/unable to load download page. When it happens, restart the app and resume downloading.
+Unfortunately, this is an issue with CefGlue and there's nothing I can do about it.
 
 # Disclaimer
 This software is provided for educational, research, and personal use only. It is not officially affiliated, endorsed, or supported by Nexus Mods, Wabbajack, or any other third-party entities. The developer of this application does not endorse or promote any use that would violate the terms of service, policies, or legal rights of any third parties, including Nexus Mods or any other service providers.
