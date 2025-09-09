@@ -19,7 +19,7 @@ You can fine-tune the app's behaviors in **settings.json**. The app needs to be 
 Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
 Extract and run **WabbaRush.exe**.<br><br>
 Requires **Windows 10 x64** or newer.<br><br>
-To build your own binaries, you will need to supply *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. These were not included for copyright reasons.
+To build your own binaries, you will need to supply *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. They were not included for copyright reasons.
 
 # Known Issues
 - Sometimes you get **connection timeout** in a long download session. This is caused by the browser freezing/unable to load download page. When it happens, restart the app and resume downloading.
