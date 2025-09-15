@@ -43,10 +43,11 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
         await semaphore.WaitAsync(token);
         try
         {
-            logger?.LogTrace("Loading download page for file {download.FileName}.", download.FileName);
+            logger?.LogTrace("Loading download site: {url}", download.Url);
             var tcs = new TaskCompletionSource<string>();
             Handler.TaskCompletionSource = tcs;
             LoadUrl(download.Url);
+            logger?.LogTrace("Site loaded. Awaiting download for {file}.", download.FileName);
             return await tcs.Task;
         }
         finally
@@ -65,19 +66,55 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
         {
             e.Frame.ExecuteJavaScript("""
                 ;(function() {
-                    function isNexusFilePage() {
-                        const url = new URL(location.href);
-                        return url.hostname.endsWith('nexusmods.com') &&
-                               url.searchParams.has('file_id');
-                    }
-
-                	function clickButton() {
-                		const btn = document.getElementById('slowDownloadButton')
-                				   || document.querySelector('a[data-download-url], button[data-download-url]');
-                		btn.click();
+                	function isNexusFilePage() {
+                		const url = new URL(location.href);
+                		return url.hostname.endsWith('nexusmods.com') &&
+                			   url.searchParams.has('file_id');
                 	}
 
-                    if (!isNexusFilePage()) return;
+                	function clickButton() {
+                	  let button;
+                	  // find the button in mod file download
+                	  const mfd = document.querySelector('mod-file-download') || document.querySelector('[user-is-logged-in="true"]');
+                	  if (mfd) {
+                		const event = new Event('slowDownload', { bubbles: true, cancelable: true });
+                		// dispatch download event directly if possible
+                		if (mfd.dispatchEvent(event))
+                		  return;
+                		// fallback to finding the button in shadow root
+                		else if (mfd.shadowRoot)
+                		  button = findButtonInBranch(mfd.shadowRoot);
+                	  }
+                	  // maybe the button is hiding in plain sight
+                	  if (!button)
+                		button = findButtonInBranch(document);
+                	  // last ditch attempt to find the button by looking in shadow roots
+                	  if (!button) {
+                		const elements = document.querySelectorAll('*');
+                		for (const element of elements) {
+                		   if (element.shadowRoot) {
+                			const buttonFound = findButtonInBranch();
+                			if (buttonFound) {
+                			  button = buttonFound;
+                			  break;
+                			}
+                		   }
+                		}
+                	  }
+                	  button?.click();
+                	}
+
+                	function findButtonInBranch(root) {
+                	  const buttons = root.querySelectorAll('button');
+                	  for (const button of buttons) {
+                		const text = button.textContent.trim().toLowerCase();
+                		if (text.includes('slow download'))
+                		  return button;
+                	  }
+                	  return null;
+                	}
+
+                	if (!isNexusFilePage()) return;
 
                 	const section = document.querySelector('section.modpage');
                 	if (!section) {
@@ -88,10 +125,10 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
                 	const game_id = section.dataset.gameId;
                 	const params = new URLSearchParams(window.location.search);
                 	const file_id = params.get('file_id') || params.get('id');
-                    if (!file_id || !game_id) {
-                        clickButton();
-                        return;
-                    }
+                	if (!file_id || !game_id) {
+                		clickButton();
+                		return;
+                	}
 
                 	if (!window.jQuery || typeof jQuery.ajax !== 'function') {
                 		clickButton();
