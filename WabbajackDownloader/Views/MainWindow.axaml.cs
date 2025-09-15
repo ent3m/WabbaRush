@@ -95,10 +95,14 @@ public partial class MainWindow : Window
         if (modlists != null && settings.SelectedModList != null)
             modlistBox.SelectedIndex = Array.FindIndex(modlists, t => t.Title == settings.SelectedModList);
 
-        maxSizeBox.Value = Math.Clamp(settings.MaxDownloadSize, downloadSizeLowerBound, downloadSizeUpperBound);
-        maxDownloadBox.Value = Math.Clamp(settings.MaxConcurrency, concurrencyLowerBound, concurrencyUpperBound);
-        maxRetryBox.Value = Math.Clamp(settings.MaxRetries, retriesLowerBound, retriesUpperBound);
+        settings.MaxDownloadSize = Math.Clamp(settings.MaxDownloadSize, downloadSizeLowerBound, downloadSizeUpperBound);
+        maxSizeBox.Value = settings.MaxDownloadSize;
+        settings.MaxConcurrency = Math.Clamp(settings.MaxConcurrency, concurrencyLowerBound, concurrencyUpperBound);
+        maxDownloadBox.Value = settings.MaxConcurrency;
+        settings.MaxRetries = Math.Clamp(settings.MaxRetries, retriesLowerBound, retriesUpperBound);
+        maxRetryBox.Value = settings.MaxRetries;
         useLocalFileBox.IsChecked = settings.UseLocalFile;
+        skipFailedDownloadsBox.IsChecked = settings.SkipFailedDownloads;
 
         // wire up observables
         var maxDownloadSizeValue = maxSizeBox.GetObservable(Slider.ValueProperty);
@@ -123,6 +127,13 @@ public partial class MainWindow : Window
         {
             if (value.HasValue)
                 settings.UseLocalFile = value.Value;
+        }));
+
+        var skipFailedDownloadsValue = skipFailedDownloadsBox.GetObservable(CheckBox.IsCheckedProperty);
+        skipFailedDownloadsValue.Subscribe(new AnonymousObserver<bool?>(value =>
+        {
+            if (value.HasValue)
+                settings.SkipFailedDownloads = value.Value;
         }));
 
         var selectedModListValue = modlistBox.GetObservable(ComboBox.SelectedItemProperty);
@@ -217,7 +228,7 @@ public partial class MainWindow : Window
 
         logger?.LogInformation("Starting download process.");
         DisableControls();
-        var circuitBreaker = new CircuitBreaker(settings.MaxRetries, settings.RetryDelay, settings.DelayMultiplier, settings.DelayJitter);
+        var circuitBreaker = new CircuitBreaker(settings.MaxRetries, settings.RetryDelay, settings.DelayMultiplier, settings.DelayJitter, settings.SkipFailedDownloads);
 
         // extract mod list
         List<NexusDownload> downloads;

@@ -74,7 +74,7 @@ internal class ModListDownloader : IDisposable
 
         client = new HttpClient(handler)
         {
-            Timeout = TimeSpan.FromSeconds(settings.HttpTimeout)
+            Timeout = TimeSpan.FromSeconds(settings.Timeout)
         };
     }
 
@@ -119,7 +119,7 @@ internal class ModListDownloader : IDisposable
             };
             await Parallel.ForEachAsync(definition.Parts, options,
                 async (part, token) => await circuitBreaker.AutoRetryAsync(
-                    async () => await DownloadPartAsync(metadata.Links.Download, part, fileHandle, progress, token),
+                    () => DownloadPartAsync(metadata.Links.Download, part, fileHandle, progress, token),
                     null, logger, "Part download", token));
         }
 

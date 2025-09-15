@@ -38,7 +38,7 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
         LoadEnd += OnBrowserLoadEnd;
     }
 
-    public async Task<string> GetDownloadUrlAsync(NexusDownload download, CancellationToken token)
+    public async Task<string> GetDownloadUrlAsync(NexusDownload download, TimeSpan timeout, CancellationToken token)
     {
         await semaphore.WaitAsync(token);
         try
@@ -48,7 +48,7 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
             Handler.TaskCompletionSource = tcs;
             LoadUrl(download.Url);
             logger?.LogTrace("Site loaded. Awaiting download for {file}.", download.FileName);
-            return await tcs.Task;
+            return await tcs.Task.WaitAsync(timeout, token);
         }
         finally
         {

@@ -7,12 +7,13 @@ using WabbajackDownloader.Extensions;
 namespace WabbajackDownloader.Common;
 
 // Implement the circuit breaker pattern by providing auto retry with exponential backoff and random jitter
-internal class CircuitBreaker(int retries, int delay, int multiplier, int jitter)
+internal class CircuitBreaker(int retries, int delay, int multiplier, int jitter, bool silentFail)
 {
     public int Retries { get; } = retries;
     public int Delay { get; } = delay;
     public int Multiplier { get; } = multiplier;
     public int Jitter { get; } = jitter;
+    public bool SilentFail { get; } = silentFail;
 
     private readonly Random random = new();
 
@@ -39,7 +40,12 @@ internal class CircuitBreaker(int retries, int delay, int multiplier, int jitter
         catch (Exception ex)
         {
             if (unignoreExceptions != null && unignoreExceptions(ex))
-                throw;
+            {
+                if (SilentFail)
+                    return;
+                else
+                    throw;
+            }
 
             if (retryCount < Retries)
             {
@@ -53,7 +59,10 @@ internal class CircuitBreaker(int retries, int delay, int multiplier, int jitter
             else
             {
                 logger?.LogError(ex, "{name} failed. No retries remaining.", name);
-                throw;
+                if (SilentFail)
+                    return;
+                else
+                    throw;
             }
         }
     }
@@ -81,7 +90,12 @@ internal class CircuitBreaker(int retries, int delay, int multiplier, int jitter
         catch (Exception ex)
         {
             if (unignoreExceptions != null && unignoreExceptions(ex))
-                throw;
+            {
+                if (SilentFail)
+                    return default!;
+                else
+                    throw;
+            }
 
             if (retryCount < Retries)
             {
@@ -95,7 +109,10 @@ internal class CircuitBreaker(int retries, int delay, int multiplier, int jitter
             else
             {
                 logger?.LogError(ex, "{name} failed. No retries remaining.", name);
-                throw;
+                if (SilentFail)
+                    return default!;
+                else
+                    throw;
             }
         }
     }

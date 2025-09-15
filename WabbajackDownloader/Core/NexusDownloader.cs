@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using WabbajackDownloader.Cef;
 using WabbajackDownloader.Common;
 using WabbajackDownloader.Configuration;
+using WabbajackDownloader.Exceptions;
 using WabbajackDownloader.Extensions;
 using WabbajackDownloader.Hashing;
 
@@ -46,12 +47,12 @@ internal class NexusDownloader : IDisposable
         bufferSize = settings.BufferSize;
         checkHash = settings.CheckHash;
         discoverExistingFiles = settings.DiscoverExistingFiles;
-        timeout = TimeSpan.FromSeconds(settings.HttpTimeout);
+        timeout = TimeSpan.FromSeconds(settings.Timeout);
         this.logger = logger;
         this.progressPool = progressPool;
         this.circuitBreaker = circuitBreaker;
         this.browser = browser;
-        this.client = new HttpClient();
+        client = new HttpClient { Timeout = timeout };
         semaphore = new SemaphoreSlim(settings.MaxConcurrency);
     }
 
@@ -89,10 +90,10 @@ internal class NexusDownloader : IDisposable
             {
                 try
                 {
-                    await circuitBreaker.AutoRetryAsync(async () => await DownloadFileAsync(download, progress?.Progress, linkedToken),
+                    await circuitBreaker.AutoRetryAsync(() => DownloadFileAsync(download, progress?.Progress, linkedToken),
                         static ex =>
                         {
-                            // these are most likely user errors. it's useless to retry here
+                            // this is most likely a user error. it's useless to retry here
                             if (ex is UnauthorizedAccessException)
                                 return true;
 
@@ -107,7 +108,7 @@ internal class NexusDownloader : IDisposable
                 // catch OperationCancenceledException that bubbles up from pending downloads
                 catch (OperationCanceledException)
                 {
-                    logger?.LogWarning("Download for {downloadName} is cancelled.", download.FileName);
+                    logger?.LogError("Download for {downloadName} is cancelled.", download.FileName);
                 }
                 // cancel all pending downloads if one download fails
                 catch
@@ -150,7 +151,25 @@ internal class NexusDownloader : IDisposable
 
         // acquire download url with timeout
         logger?.LogTrace("Attempting to fetch download Url for {download.Filename}.", download.FileName);
-        var url = await browser.GetDownloadUrlAsync(download, token).WaitAsync(timeout, token);
+        string? url;
+        try
+        {
+            url = await browser.GetDownloadUrlAsync(download, timeout, token);
+        }
+        // timeout here means that we failed to get download url
+        // this could be caused by:
+        // 1. not being logged in
+        // 2. bad internet connection
+        // 3. cef browser freezing
+        // 4. nexus changed its DOM
+        // figuring out the cause is too much work, so we just throw a special exception
+        catch (TimeoutException ex)
+        {
+            throw new NexusDownloadException($"""
+                    Failed to retrieve download url on page {download.Url}. The request timed out.
+                    Possible causes: User not logged in; Bad internet connection; Cef browser frozen; Nexus site structure has changed.
+                    """, ex);
+        }
         // acquire file name and file size from header
         string? fileName = default;
         long? fileSize = default;

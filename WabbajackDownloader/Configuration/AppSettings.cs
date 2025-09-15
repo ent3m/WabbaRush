@@ -12,6 +12,7 @@ public class AppSettings
     public string? WabbajackFile { get; set; }
     public string? SelectedModList { get; set; }
     public bool UseLocalFile { get; set; } = false;
+    public bool SkipFailedDownloads { get; set; } = false;
     public int MaxConcurrency { get; set; } = 3;
     public int MaxRetries { get; set; } = 3;
     public int MaxDownloadSize { get; set; } = 2000;
@@ -21,7 +22,7 @@ public class AppSettings
     public int RetryDelay { get; set; } = 500;
     public int DelayMultiplier { get; set; } = 2;
     public int DelayJitter { get; set; } = 1000;
-    public int HttpTimeout { get; set; } = 30;
+    public int Timeout { get; set; } = 30;
     public bool CheckHash { get; set; } = true;
     public bool AppendDebugLog { get; set; } = false;
     public string ModListDownloadPath { get; set; } = "downloaded-modlists";

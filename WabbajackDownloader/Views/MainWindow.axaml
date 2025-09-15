@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:modlist="using:WabbajackDownloader.ModList"
-        mc:Ignorable="d" d:DesignHeight="500" d:DesignWidth="500"
+        mc:Ignorable="d" d:DesignHeight="540" d:DesignWidth="500"
         x:Class="WabbajackDownloader.Views.MainWindow"
         Icon="/Assets/wabbajack.ico"
         Title="Wabbajack Downloader"
@@ -11,7 +11,7 @@
         ExtendClientAreaChromeHints="PreferSystemChrome"
         TransparencyLevelHint="AcrylicBlur"
         Background="{StaticResource WindowBackgroundColor}"
-        Height="500" Width="500"
+        Height="540" Width="500"
         WindowStartupLocation="CenterScreen">
 
   <Window.Resources>
@@ -211,14 +211,24 @@
                         Orientation="Vertical">
               <!-- Use local file -->
               <StackPanel HorizontalAlignment="Center">
-                <TextBlock Text="Use local wabbajack file:"
-                           TextAlignment="Center"/>
+                <TextBlock Text="  Use local wabbajack file:   "
+                           TextAlignment="Center"
+                           ToolTip.Tip="Enable this option to choose a wabbajack file on disk."/>
                 <CheckBox Name="useLocalFileBox"/>
+              </StackPanel>
+              <!-- Skip failed downloads -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Skip over failed downloads:"
+                           TextAlignment="Center"
+                           ToolTip.Tip="Should download continue if previous downloads failed?
+                           This setting is useful when most of the downloads complete successfully but a few keep failing."/>
+                <CheckBox Name="skipFailedDownloadsBox"/>
               </StackPanel>
               <!-- Max download size -->
               <StackPanel Orientation="Vertical">
                 <StackPanel HorizontalAlignment="Center">
-                  <TextBlock Text="Max Download Size:"/>
+                  <TextBlock Text="Max Download Size:"
+                             ToolTip.Tip="The maximum file size that the program will download. It is recommended to download large files manually."/>
                   <TextBlock Text="{Binding #maxSizeBox.Value}"/>
                   <TextBlock Text="MB"/>
                 </StackPanel>
@@ -230,14 +240,16 @@
               <StackPanel HorizontalAlignment="Center">
                 <TextBlock Text="Max Download:"
                            Width="100"
-                           TextAlignment="Center"/>
+                           TextAlignment="Center"
+                           ToolTip.Tip="The maximum number of simultaneously downloads. Total speed is throttled to 3MB/s for free accounts."/>
                 <NumericUpDown Name="maxDownloadBox"/>
               </StackPanel>
               <!-- Max retry -->
               <StackPanel HorizontalAlignment="Center">
                 <TextBlock Text="Max Retry:"
                            Width="100"
-                           TextAlignment="Center"/>
+                           TextAlignment="Center"
+                           ToolTip.Tip="Maximum number of retries per download. The higher this number, the more fault-torelant the program is."/>
                 <NumericUpDown Name="maxRetryBox"/>
               </StackPanel>
             </StackPanel>
