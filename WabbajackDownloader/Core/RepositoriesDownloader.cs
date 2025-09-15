@@ -21,13 +21,13 @@ internal class RepositoriesDownloader
         ModListMetadata[]? repositories = default;
         try
         {
-            logger?.LogTrace("Downloading repositories.json from {url}.", repositoriesUrl);
+            logger?.LogDebug("Downloading repositories.json from {url}.", repositoriesUrl);
             using var client = new HttpClient()
             {
                 Timeout = TimeSpan.FromSeconds(timeout)
             };
             var repo = await client.GetFromJsonAsync<Dictionary<string, Uri>>(repositoriesUrl, SerializerOptions.Options, token);
-            logger?.LogTrace("Extracting mod lists from repositories.json.");
+            logger?.LogDebug("Extracting mod lists from repositories.json.");
             var options = new ParallelOptions()
             {
                 MaxDegreeOfParallelism = maxConcurrency,
@@ -46,7 +46,7 @@ internal class RepositoriesDownloader
                     foreach (var entry in data)
                     {
                         lists.Add(entry);
-                        logger?.LogTrace("Added {title} to available mod lists.", entry.Title);
+                        logger?.LogDebug("Added {title} to available mod lists.", entry.Title);
                     }
                 }
             }

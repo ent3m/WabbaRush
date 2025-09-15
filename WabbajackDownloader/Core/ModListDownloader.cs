@@ -89,12 +89,12 @@ internal class ModListDownloader : IDisposable
         var path = Path.Combine(folderPath, fileName);
 
         token.ThrowIfCancellationRequested();
-        logger?.LogTrace("Starting download process for {fileName}.", fileName);
+        logger?.LogDebug("Starting download process for {fileName}.", fileName);
 
         // check for existing file
         if (discoverExistingFiles && File.Exists(path))
         {
-            logger?.LogTrace("Discovered existing file. Checking file integrity.");
+            logger?.LogDebug("Discovered existing file. Checking file integrity.");
             await using var readStream = File.Open(path, FileMode.Open, FileAccess.Read);
             var hash = await readStream.Hash(bufferSize, token);
             if (hash.Equals(metadata.DownloadMetadata.Hash))
@@ -103,7 +103,7 @@ internal class ModListDownloader : IDisposable
                 return path;
             }
             else
-                logger?.LogTrace("Existing wabbajack file is either corrupted or oudated. Proceeding to download.");
+                logger?.LogDebug("Existing wabbajack file is either corrupted or oudated. Proceeding to download.");
         }
 
         // get file and part definitions
@@ -131,7 +131,7 @@ internal class ModListDownloader : IDisposable
             await using var fileStream = File.Open(path, FileMode.Open, FileAccess.Read);
             var hash = await fileStream.Hash(bufferSize, token);
             hash.ThrowOnMismatch(definition.Hash, fileName, logger);
-            logger?.LogTrace("Verified hash for {file}.", fileName);
+            logger?.LogDebug("Verified hash for {file}.", fileName);
         }
 
         logger?.LogInformation("Downloaded {file} succesfully.", fileName);
@@ -141,7 +141,7 @@ internal class ModListDownloader : IDisposable
 
     private async Task<FileDefinition?> GetFileDefinitionAsync(ModListMetadata metadata, CancellationToken token)
     {
-        logger?.LogTrace("Getting FileDefinition from definition.json.gz.");
+        logger?.LogDebug("Getting FileDefinition from definition.json.gz.");
         var uri = new Uri(metadata.Links.Download + definitionQuery);
         using var message = BuildMessage(uri);
         using var response = await client.SendAsync(message, token);
@@ -149,13 +149,13 @@ internal class ModListDownloader : IDisposable
         await using var content = await response.Content.ReadAsStreamAsync(token);
         await using var gzip = new GZipStream(content, CompressionMode.Decompress);
         var definition = await JsonSerializer.DeserializeAsync<FileDefinition>(gzip, SerializerOptions.Options, token);
-        logger?.LogTrace("FileDefinition successfully retrieved.");
+        logger?.LogDebug("FileDefinition successfully retrieved.");
         return definition;
     }
 
     private async Task DownloadPartAsync(string url, PartDefinition part, SafeFileHandle fileHandle, IProgress<long>? progress, CancellationToken token)
     {
-        logger?.LogTrace("Downloading part {index}.", part.Index);
+        logger?.LogDebug("Downloading part {index}.", part.Index);
         var uri = new Uri(url + partQuery + part.Index);
         using var message = BuildMessage(uri);
         using var response = await client.SendAsync(message, token);
@@ -166,11 +166,11 @@ internal class ModListDownloader : IDisposable
             await using var stream = new MemoryStream(content);
             var hash = await stream.Hash(bufferSize, token);
             hash.ThrowOnMismatch(part.Hash, $"part {part.Index}", logger);
-            logger?.LogTrace("Verified part {index}.", part.Index);
+            logger?.LogDebug("Verified part {index}.", part.Index);
         }
         await RandomAccess.WriteAsync(fileHandle, content, part.Offset, token);
         progress?.Report(content.Length);
-        logger?.LogTrace("Part {index} written to disk.", part.Index);
+        logger?.LogDebug("Part {index} written to disk.", part.Index);
     }
 
     private static string GetFileName(string downloadLink)

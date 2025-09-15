@@ -43,11 +43,11 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
         await semaphore.WaitAsync(token);
         try
         {
-            logger?.LogTrace("Loading download site: {url}", download.Url);
+            logger?.LogDebug("Loading download site: {url}", download.Url);
             var tcs = new TaskCompletionSource<string>();
             Handler.TaskCompletionSource = tcs;
             LoadUrl(download.Url);
-            logger?.LogTrace("Site loaded. Awaiting download for {file}.", download.FileName);
+            logger?.LogDebug("Site loaded. Awaiting download for {file}.", download.FileName);
             return await tcs.Task.WaitAsync(timeout, token);
         }
         finally

@@ -73,7 +73,7 @@ internal class NexusDownloader : IDisposable
         foreach (var download in downloads)
         {
             int i = Interlocked.Increment(ref pos);
-            logger?.LogTrace("File {count}/{total} is queueing for download.", i, downloads.Count);
+            logger?.LogDebug("File {count}/{total} is queueing for download.", i, downloads.Count);
             // semaphore should not listen for linked token, or the only exception getting thrown will be OperationCanceledException
             await semaphore.WaitAsync(token).ConfigureAwait(false);
 
@@ -150,7 +150,7 @@ internal class NexusDownloader : IDisposable
         token.ThrowIfCancellationRequested();
 
         // acquire download url with timeout
-        logger?.LogTrace("Attempting to fetch download Url for {download.Filename}.", download.FileName);
+        logger?.LogDebug("Attempting to fetch download Url for {download.Filename}.", download.FileName);
         string? url;
         try
         {
@@ -188,7 +188,7 @@ internal class NexusDownloader : IDisposable
         // sometimes, wabbajack file name does not match actual file name, so we need to check if the file exists again
         if (download.FileName != fileName)
         {
-            logger?.LogTrace("File {fileName} does not match wabbajack file name. Checking again if the file already exists.", fileName);
+            logger?.LogDebug("File {fileName} does not match wabbajack file name. Checking again if the file already exists.", fileName);
 
             if (existingFiles != null && existingFiles.TryGetValue(fileName, out var localSize))
             {
@@ -203,7 +203,7 @@ internal class NexusDownloader : IDisposable
         token.ThrowIfCancellationRequested();
 
         // download the file and write it to disk
-        logger?.LogTrace("Starting download for {file}...", fileName);
+        logger?.LogDebug("Starting download for {file}...", fileName);
         await using var downloadStream = await client.GetStreamAsync(url, token);
         await using var progressStream = new ProgressStream(downloadStream, progress);
         await using var inputStream = new IdleTimeoutStream(progressStream, timeout);
@@ -214,7 +214,7 @@ internal class NexusDownloader : IDisposable
         {
             var hash = await inputStream.HashingCopy(fileStream, bufferSize, token);
             hash.ThrowOnMismatch(download.Hash, fileName, logger);
-            logger?.LogTrace("Verified hash for {file}.", fileName);
+            logger?.LogDebug("Verified hash for {file}.", fileName);
         }
         else
             await inputStream.CopyToAsync(fileStream, bufferSize, token);
@@ -239,7 +239,7 @@ internal class NexusDownloader : IDisposable
                 var name = info.Name;
                 var size = info.Length;
                 results.Add(name, size);
-                logger?.LogTrace("Discovered file {name} of size {size} B.", name, size);
+                logger?.LogDebug("Discovered file {name} of size {size} B.", name, size);
             }
         }
         return results;

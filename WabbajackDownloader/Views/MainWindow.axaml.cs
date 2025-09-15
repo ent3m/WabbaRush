@@ -238,7 +238,7 @@ public partial class MainWindow : Window
             if (settings.UseLocalFile)
             {
                 file = settings.WabbajackFile!;
-                logger?.LogTrace("Using local wabbajack file {file}.", file);
+                logger?.LogDebug("Using local wabbajack file {file}.", file);
             }
             else
             {
@@ -259,13 +259,13 @@ public partial class MainWindow : Window
                 downloadProgressBar.Value = 0;
                 downloadProgressBar.ProgressTextFormat = metadata.DownloadMetadata.Size.DisplayByteSize() + " ({1:0}%)";
 
-                logger?.LogTrace("Getting wabbajack file for {title} from Wabbajack CDN.", metadata.Title);
+                logger?.LogDebug("Getting wabbajack file for {title} from Wabbajack CDN.", metadata.Title);
                 file = await modlistDownloader.DownloadWabbajackAsync(metadata, progress, downloadTokenSource.Token);
             }
 
             infoText.Text = "Extracting download links...";
             await Task.Delay(10);   // pause for the UI to update
-            logger?.LogTrace("Extracting mods from wabbajack file.");
+            logger?.LogDebug("Extracting mods from wabbajack file.");
             downloads = ExtractDownloads(file);
         }
         catch (Exception ex)
@@ -295,7 +295,7 @@ public partial class MainWindow : Window
             downloadProgressBar.Value = 0;
             downloadProgressBar.ProgressTextFormat = "{0}/{3} ({1:0}%)";
 
-            logger?.LogTrace("Extraction completed. Downloading individual mods.");
+            logger?.LogDebug("Extraction completed. Downloading individual mods.");
             await downloader.DownloadAsync(new Progress<int>(i => downloadProgressBar.Value = i), downloadTokenSource.Token);
 
             infoText.Text = "All done!";
@@ -362,17 +362,17 @@ public partial class MainWindow : Window
     // Cancel ongoing downloads and save settings before closing
     protected override void OnClosing(WindowClosingEventArgs e)
     {
-        logger?.LogTrace("Preparing to shut down...");
-        logger?.LogTrace("Saving settings.");
+        logger?.LogDebug("Preparing to shut down...");
+        logger?.LogDebug("Saving settings.");
         settings.SaveSettings();
-        logger?.LogTrace("Cancelling remaining tasks.");
+        logger?.LogDebug("Cancelling remaining tasks.");
         downloadTokenSource.Cancel();
         downloadTokenSource.Dispose();
-        logger?.LogTrace("Closing nexus window.");
+        logger?.LogDebug("Closing nexus window.");
         browser?.Owner.Close();
-        logger?.LogTrace("Disposing nexus window.");
+        logger?.LogDebug("Disposing nexus window.");
         browser?.Dispose();
-        logger?.LogTrace("Calling base.OnClosing");
+        logger?.LogDebug("Calling base.OnClosing");
         base.OnClosing(e);
     }
 }

@@ -31,7 +31,7 @@ public partial class NexusSigninWindow : Window
 
         this.logger = logger;
         var address = loginPage + Uri.EscapeDataString(nexusLandingPage);
-        logger?.LogTrace("Creating cef browser...");
+        logger?.LogDebug("Creating cef browser...");
         browser = new AutoDownloadCefBrowser(this, RequestContextFactory, logger)
         {
             Address = address,
@@ -39,7 +39,7 @@ public partial class NexusSigninWindow : Window
         };
         browser.LoadStart += OnBrowserLoadStart;
         browserContainer.Child = browser;
-        logger?.LogTrace("Cef browser created and initialized.");
+        logger?.LogDebug("Cef browser created and initialized.");
         static CefRequestContext RequestContextFactory()
         {
             CefRequestContextSettings settings = new()

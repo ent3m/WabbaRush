@@ -41,7 +41,7 @@ internal static class ModlistExtractor
                     var meta = archiveObject?["Meta"]?.ToString() ?? archiveObject?["meta"]?.ToString();
                     if (name == null || hash == null || meta == null)
                     {
-                        logger?.LogTrace("This entry is not a nexus download. Skipping ahead.\nInvalid entry:\n{entry}", archiveObject);
+                        logger?.LogDebug("This entry is not a nexus download. Skipping ahead.\nInvalid entry:\n{entry}", archiveObject);
                         continue;
                     }
 
@@ -53,12 +53,12 @@ internal static class ModlistExtractor
                             // add valid entry to list
                             var download = new NexusDownload(game, name, modID, fileID, size, Hash.Interpret(hash));
                             downloads.Add(download);
-                            logger?.LogTrace("Mod {name} is added to download.", name);
+                            logger?.LogDebug("Mod {name} is added to download.", name);
                         }
                     }
                     else
                     {
-                        logger?.LogTrace("Cannot extract game name, mod ID, and file ID from:\n{meta}.", meta);
+                        logger?.LogDebug("Cannot extract game name, mod ID, and file ID from:\n{meta}.", meta);
                     }
                 }
             }
