@@ -40,14 +40,21 @@ internal class RepositoriesDownloader
 
             async ValueTask Fetch(KeyValuePair<string, Uri> item, CancellationToken token)
             {
-                var data = await client.GetFromJsonAsync<ModListMetadata[]>(item.Value, SerializerOptions.Options, token);
-                if (data != null)
+                try
                 {
-                    foreach (var entry in data)
+                    var data = await client.GetFromJsonAsync<ModListMetadata[]>(item.Value, SerializerOptions.Options, token);
+                    if (data != null)
                     {
-                        lists.Add(entry);
-                        logger?.LogDebug("Added {title} to available mod lists.", entry.Title);
+                        foreach (var entry in data)
+                        {
+                            lists.Add(entry);
+                            logger?.LogDebug("Added {title} to available mod lists.", entry.Title);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, "Failed to fetch mod list from {url}.", item.Value);
                 }
             }
         }
