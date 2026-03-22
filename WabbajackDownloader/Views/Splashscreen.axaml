@@ -11,7 +11,7 @@
         Topmost="True"
         Background="Transparent"
         BorderBrush="Transparent"
-        Title="Wabbajack Downloader">
+        Title="WabbaRush">
 
   <StackPanel Orientation="Vertical">
     <Image Source="/Assets/wabbajack.png"
