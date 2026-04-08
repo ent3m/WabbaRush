@@ -1,80 +1,50 @@
 using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Avalonia.Threading;
-using Microsoft.Extensions.Logging;
-using System;
-using System.IO;
-using System.Threading;
-using WabbajackDownloader.Configuration;
-using WabbajackDownloader.Core;
-using WabbajackDownloader.Logging;
-using WabbajackDownloader.ModList;
-using WabbajackDownloader.Views;
-using Xilium.CefGlue;
-using Xilium.CefGlue.Common;
+using Microsoft.Extensions.DependencyInjection;
+using WabbajackDownloader.Common.Configuration;
+using WabbajackDownloader.Common.Logging;
+using WabbajackDownloader.Common.Platform;
+using WabbajackDownloader.Common.Retry;
+using WabbajackDownloader.Common.Serialization;
+using WabbajackDownloader.Features.Dashboard;
+using WabbajackDownloader.Features.NexusMods;
+using WabbajackDownloader.Features.WabbajackModList.Services;
+using WabbajackDownloader.Features.WabbajackRepo;
+using Waypoint;
 
-namespace WabbajackDownloader
+namespace WabbajackDownloader;
+
+public partial class App : Application
 {
-    public partial class App : Application
+    public override void Initialize()
     {
-#pragma warning disable CS8618 // these are created in Initialize()
-        private AppSettings settings;
-        private ILoggerProvider loggerProvider;
-        private Window splashscreen;
-#pragma warning restore CS8618
-
-        public override void Initialize()
-        {
-            var baseDir = AppContext.BaseDirectory;
-            // load app settings
-            var settingsPath = Path.Combine(baseDir, "settings.json");
-            settings = AppSettings.LoadOrGetDefaultSettings(settingsPath);
-
-            // manage cef logging
-            CefRuntimeLoader.Initialize(new CefSettings()
-            {
-                LogFile = Path.Combine(baseDir, "cef-debug.log"),
-                LogSeverity = settings.CefLogLevel,
-                Locale = "en-US",
-                LocalesDirPath = Path.Combine(baseDir, "locales"),
-            });
-
-            // configure logging
-#if DEBUG
-            loggerProvider = new DebugLoggerProvider();
-#else
-            var logPath = Path.Combine(baseDir, "debug.log");
-            loggerProvider = new FileLoggerProvider(logPath, settings.LogLevel, settings.AppendDebugLog);
-#endif
-            AvaloniaXamlLoader.Load(this);
-        }
-
-        public override void OnFrameworkInitializationCompleted()
-        {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                splashscreen = new Splashscreen();
-                desktop.MainWindow = splashscreen;
-            }
-
-            RepositoriesDownloader.FetchRepositoriesAsync(settings.MaxConcurrency, settings.Timeout,
-                loggerProvider.CreateLogger(nameof(RepositoriesDownloader)), CancellationToken.None)
-                .ContinueWith(r => Dispatcher.UIThread.Post(() => CompleteApplicationStart(r.Result)));
-
-            base.OnFrameworkInitializationCompleted();
-        }
-
-        private void CompleteApplicationStart(ModListMetadata[]? repositories)
-        {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                var window = new MainWindow(repositories, settings, loggerProvider);
-                desktop.MainWindow = window;
-                window.Show();
-                splashscreen.Close();
-            }
-        }
+        AvaloniaXamlLoader.Load(this);
     }
+
+    public override void OnFrameworkInitializationCompleted()
+    {
+        var collections = new ServiceCollection();
+        var services = collections
+            .AddSerialization()
+            .AddConfiguration()
+            .AddLogger()
+            .AddRetry()
+            .AddPlatform()
+            .AddNavigation(ApplicationLifetime, RegisterFeatures)
+            .AddWabbajackRepo()
+            .AddWabbajackModList()
+            .AddDashboard()
+            .AddNexusMods()
+            .BuildServiceProvider();
+
+        // Start the application with the splash screen
+        var navigation = services.GetRequiredService<INavigator>();
+        navigation.NavigateWindowAsync<Splashscreen>();
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private static void RegisterFeatures(IViewRegistry views) => views
+        .RegisterDashboard()
+        .RegisterNexusMods();
 }

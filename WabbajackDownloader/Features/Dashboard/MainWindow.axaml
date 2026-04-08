@@ -1,0 +1,297 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="using:WabbajackDownloader.Features.Dashboard"
+        xmlns:wabba="using:WabbajackDownloader.Features.WabbajackRepo"
+        xmlns:config="using:WabbajackDownloader.Common.Configuration"
+        mc:Ignorable="d" d:DesignHeight="540" d:DesignWidth="500"
+        x:Class="WabbajackDownloader.Features.Dashboard.MainWindow"
+        x:DataType="local:MainWindowViewModel"
+        Icon="/Assets/wabbajack.ico"
+        Title="WabbaRush"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="{StaticResource WindowBackgroundColor}"
+        Height="540" Width="500"
+        WindowStartupLocation="CenterScreen">
+
+  <Design.DataContext>
+    <local:MainWindowViewModel/>
+  </Design.DataContext>
+
+  <Window.Resources>
+    <!-- Slider colors -->
+    <StaticResource x:Key="SliderTrackValueFill" ResourceKey="MainColor" />
+    <!-- Expander colors -->
+    <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="MainColor" />
+    <StaticResource x:Key="ExpanderHeaderBorderBrushPointerOver" ResourceKey="MainColor" />
+    <StaticResource x:Key="ExpanderHeaderBorderBrushPressed" ResourceKey="MainColor" />
+    <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundPointerOver" ResourceKey="HighlightColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundPressed" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ExpanderHeaderBackgroundDisabled" ResourceKey="BackgroundColor" />
+    <!-- ComboBox colors -->
+    <StaticResource x:Key="ComboBoxBorderBrush" ResourceKey="MainColor" />
+    <StaticResource x:Key="ComboBoxBorderBrushPointerOver" ResourceKey="MainColor" />
+    <StaticResource x:Key="ComboBoxBorderBrushPressed" ResourceKey="MainColor" />
+    <StaticResource x:Key="ComboBoxBackground" ResourceKey="BackgroundColor" />
+    <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="HighlightColor" />
+    <StaticResource x:Key="ComboBoxBackgroundDisabled" ResourceKey="BackgroundColor" />
+  </Window.Resources>
+  
+  <!-- Main container -->
+  <Panel Margin="20">
+    <!-- Styles -->
+    <Panel.Styles>
+      <Style Selector="Image">
+        <Setter Property="Height" Value="24"/>
+      </Style>
+      <Style Selector="Image.wabbajack">
+        <Setter Property="Height" Value="64"/>
+        <Setter Property="Source" Value="/Assets/wabbajack.png"/>
+      </Style>
+
+      <Style Selector="StackPanel">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Orientation" Value="Horizontal"/>
+        <Setter Property="Spacing" Value="5"/>
+      </Style>
+      
+      <Style Selector="TextBlock">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+      </Style>
+
+      <Style Selector="CheckBox:unchecked /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
+      </Style>
+      <Style Selector="CheckBox:pointerover /template/ Border#NormalRectangle">
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
+      </Style>
+
+      <Style Selector="Button">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="3"/>
+        <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{StaticResource HighlightColor}"/>
+        </Style>
+        <Style Selector="^:disabled /template/ ContentPresenter#PART_ContentPresenter">
+          <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+          <Setter Property="BorderBrush" Value="{StaticResource BackgroundColor}"/>
+        </Style>
+      </Style>
+      
+      <Style Selector="Button.picker">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Style Selector="^ TextBlock">
+          <Setter Property="Grid.Column" Value="1"/>
+        </Style>
+        <Style Selector="^ Image">
+          <Setter Property="Source" Value="/Assets/folder.png"/>
+          <Setter Property="Grid.Column" Value="2"/>
+          <Setter Property="HorizontalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="^:pointerover">
+          <Style Selector="^ Image">
+            <Setter Property="Source" Value="/Assets/folder-open.png"/>
+          </Style>
+        </Style>
+      </Style>
+
+      <Style Selector="Slider:horizontal">
+        <Style Selector="^ Track">
+          <Style Selector="^ RepeatButton Border">
+            <Setter Property="Height" Value="3"/>
+          </Style>
+          <Style Selector="^ Thumb">
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Width" Value="16"/>
+            <Setter Property="Background" Value="{StaticResource MainColor}"/>
+          </Style>
+        </Style>
+      </Style>
+
+      <Style Selector="NumericUpDown">
+        <Setter Property="Increment" Value="1"/>
+        <Setter Property="FormatString" Value="0"/>
+        <Setter Property="Width" Value="120"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="BorderBrush" Value="{StaticResource MainColor}"/>
+        <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+      </Style>
+    </Panel.Styles>
+    
+    <StackPanel Orientation="Vertical"
+                Spacing="10">
+      
+      <!-- Banner with hyperlink button -->
+      <Button BorderThickness="0"
+              Command="{Binding OpenRepoCommand}"
+              ToolTip.Tip="{x:Static local:MainWindowViewModel.RepoUrl}">
+        <Button.Styles>
+          <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+          </Style>
+        </Button.Styles>
+        <StackPanel Orientation="Horizontal"
+                    VerticalAlignment="Center">
+          <Image Classes="wabbajack"/>
+          <TextBlock FontFamily="{StaticResource BannerFont}"
+                     FontSize="46"
+                     FontWeight="Heavy"
+                     Foreground="{StaticResource MainColor}"
+                     Text="WabbaRush"/>
+          <Image Classes="wabbajack"/>
+        </StackPanel>
+      </Button>
+
+      <Grid ColumnDefinitions="*,4*,*">
+        <StackPanel Orientation="Vertical"
+                    Spacing="10"
+                    Grid.Column="1">
+          
+          <!-- File selection controls -->
+          <Button Classes="picker"
+                  Grid.Column="1"
+                  Command="{Binding OpenWabbajackFilePickerCommand}"
+                  IsVisible="{Binding #useLocalFileBox.IsChecked}"
+                  IsEnabled="{Binding !DownloadModsCommand.IsRunning}">
+            <Grid ColumnDefinitions="30,*,30"
+                  Width="{Binding $parent.Bounds.Width}">
+              <TextBlock Text="{Binding LocalFilePath, TargetNullValue='Select Wabbajack File'}"/>
+              <Image/>
+            </Grid>
+          </Button>
+          
+          <ComboBox HorizontalAlignment="Stretch"
+                    Height="{Binding #folderPickerButton.Bounds.Height}"
+                    IsVisible="{Binding !#useLocalFileBox.IsChecked}"
+                    IsEnabled="{Binding !DownloadModsCommand.IsRunning}"
+                    ItemsSource="{Binding ModLists}"
+                    SelectedIndex="{Binding SelectedModListIndex}"
+                    PlaceholderText="Select a Mod List"
+                    HorizontalContentAlignment="Center">
+            <ComboBox.ItemTemplate>
+              <DataTemplate DataType="wabba:ModListMetadata">
+                <TextBlock Text="{Binding Title}"
+                           ToolTip.Tip="{Binding Summary}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+
+          <!-- Folder selection controls -->
+          <Button Name="folderPickerButton"
+                  Classes="picker"
+                  Command="{Binding OpenDownloadFolderPickerCommand}"
+                  IsEnabled="{Binding !DownloadModsCommand.IsRunning}">
+            <Grid ColumnDefinitions="30,*,30"
+                  Width="{Binding $parent.Bounds.Width}">
+              <TextBlock Text="{Binding DownloadFolderPath, TargetNullValue='Select Download Folder'}"/>
+              <Image/>
+            </Grid>
+          </Button>
+
+          <!-- Nexus login -->
+          <Button Width="{Binding #downloadButton.Bounds.Width}"
+                  Command="{Binding OpenNexusWindowCommand}"
+                  IsEnabled="{Binding !DownloadModsCommand.IsRunning}">
+            <StackPanel HorizontalAlignment="Center">
+              <Image Source="/Assets/nexus.png"/>
+              <TextBlock Text="Login"/>
+            </StackPanel>
+          </Button>
+
+          <!-- Expandable options -->
+          <Expander Grid.Column="1"
+                    HorizontalAlignment="Stretch"
+                    BorderBrush="{StaticResource MainColor}"
+                    Background="{StaticResource BackgroundColor}"
+                    MinHeight="37"
+                    Header="    Options">
+            <StackPanel HorizontalAlignment="Center"
+                        Orientation="Vertical">
+              <!-- Use local file -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="  Use local wabbajack file:   "
+                           TextAlignment="Center"
+                           ToolTip.Tip="Enable this option to choose a wabbajack file on disk."/>
+                <CheckBox Name="useLocalFileBox"
+                          IsChecked="{Binding UseLocalFile}"/>
+              </StackPanel>
+              <!-- Skip failed downloads -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Skip over failed downloads:"
+                           TextAlignment="Center"
+                           ToolTip.Tip="Should download continue if previous downloads failed?
+                           This setting is useful when most of the downloads complete successfully but a few keep failing."/>
+                <CheckBox Name="skipFailedDownloadsBox"/>
+              </StackPanel>
+              <!-- Max download size -->
+              <StackPanel Orientation="Vertical">
+                <StackPanel HorizontalAlignment="Center">
+                  <TextBlock Text="Max Download Size:"
+                             ToolTip.Tip="The maximum file size that the program will download. It is recommended to download large files manually."/>
+                  <TextBlock Text="{Binding #maxSizeBox.Value}"/>
+                  <TextBlock Text="MB"/>
+                </StackPanel>
+                <Slider Name="maxSizeBox"
+                        TickFrequency="1"
+                        IsSnapToTickEnabled="True"
+                        Minimum="{x:Static config:SettingsManager.DownloadSizeLowerBoundDouble}"
+                        Maximum="{x:Static config:SettingsManager.DownloadSizeUpperBoundDouble}"/>
+              </StackPanel>
+              <!-- Max concurrent download -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Max Download:"
+                           Width="100"
+                           TextAlignment="Center"
+                           ToolTip.Tip="The maximum number of simultaneous downloads. Total speed is throttled to 3MB/s for free accounts."/>
+                <NumericUpDown Name="maxDownloadBox"/>
+              </StackPanel>
+              <!-- Max retry -->
+              <StackPanel HorizontalAlignment="Center">
+                <TextBlock Text="Max Retry:"
+                           Width="100"
+                           TextAlignment="Center"
+                           ToolTip.Tip="Maximum number of retries per download. The higher this number, the more fault-torelant the program is."/>
+                <NumericUpDown Name="maxRetryBox"/>
+              </StackPanel>
+            </StackPanel>
+          </Expander>
+
+          <!-- Download button -->
+          <Button Name="downloadButton"
+                  Command="{Binding DownloadModsCommand}">
+            <StackPanel>
+              <TextBlock Text="Download"/>
+              <Image Source="/Assets/download.png"/>
+            </StackPanel>
+          </Button>
+
+          <!-- Information and progress -->
+          <TextBlock TextWrapping="WrapWithOverflow"
+                     Text="{Binding InfoText}"/>
+          <StackPanel Orientation="Vertical"
+                      IsVisible="{Binding DownloadModsCommand.IsRunning}">
+            <ProgressBar Value="0"
+                         Maximum="0"
+                         ShowProgressText="True"
+                         ProgressTextFormat="{}{0}/{3} ({1:0}%)"/>
+          </StackPanel>
+
+        </StackPanel>
+      </Grid>
+    </StackPanel>
+  </Panel>
+
+</Window>

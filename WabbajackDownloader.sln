@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36202.13
+# Visual Studio Version 18
+VisualStudioVersion = 18.4.11626.88 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WabbajackDownloader", "WabbajackDownloader\WabbajackDownloader.csproj", "{F4CD1B76-328F-46ED-B071-124BC767DEDA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waypoint", "..\Navigation\Waypoint\Waypoint.csproj", "{0A60FEF5-1698-4DAC-B2D5-3904152BA269}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Waypoint.SourceGenerators", "..\Navigation\Waypoint.SourceGenerators\Waypoint.SourceGenerators.csproj", "{2125C931-8EB7-C647-26C0-73E1BC9859CF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{F4CD1B76-328F-46ED-B071-124BC767DEDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4CD1B76-328F-46ED-B071-124BC767DEDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4CD1B76-328F-46ED-B071-124BC767DEDA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A60FEF5-1698-4DAC-B2D5-3904152BA269}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A60FEF5-1698-4DAC-B2D5-3904152BA269}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A60FEF5-1698-4DAC-B2D5-3904152BA269}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A60FEF5-1698-4DAC-B2D5-3904152BA269}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2125C931-8EB7-C647-26C0-73E1BC9859CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2125C931-8EB7-C647-26C0-73E1BC9859CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2125C931-8EB7-C647-26C0-73E1BC9859CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2125C931-8EB7-C647-26C0-73E1BC9859CF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

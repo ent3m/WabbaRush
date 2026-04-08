@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="using:WabbajackDownloader.Features.NexusMods"
+        x:Class="WabbajackDownloader.Features.NexusMods.NexusWindow"
+        x:DataType="local:NexusWindowViewModel"
+        Icon="/Assets/nexus.png"
+        Title="Nexus Mods"
+        ExtendClientAreaToDecorationsHint="False"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent"
+        WindowStartupLocation="CenterScreen">
+
+  <DockPanel>
+    <ExperimentalAcrylicBorder IsHitTestVisible="False">
+      <ExperimentalAcrylicBorder.Material>
+        <ExperimentalAcrylicMaterial BackgroundSource="Digger"
+                                     TintColor="{StaticResource MainColor}"
+                                     TintOpacity="1"
+                                     FallbackColor="Black"
+                                     MaterialOpacity="0.25"/>
+      </ExperimentalAcrylicBorder.Material>
+    </ExperimentalAcrylicBorder>
+    <TextBlock Text="{Binding AddressText, Mode=OneWay}" DockPanel.Dock="Bottom" Background="Transparent" VerticalAlignment="Center" Foreground="Silver"/>
+    <NativeWebView Name="webView" DragDrop.AllowDrop="False"
+                   Source="{Binding Address, Mode=TwoWay}"
+                   local:WebViewExtensions.AllowPopups="False"
+                   local:WebViewExtensions.NavigationCompletedCommand="{Binding NavigatedCommand}"
+                   local:WebViewExtensions.Controller="{Binding Controller, Mode=OneWay}"/>
+  </DockPanel>
+
+</Window>

@@ -363,13 +363,4 @@ MigrationBackup/
 /WabbajackDownloader/Assets/wabbajack.png
 /WabbajackDownloader/Assets/MountainKingRegular.ttf
 /WabbajackDownloader/Assets/nexus.png
-/WabbajackDownloader/native/libANGLE_static.lib
-/WabbajackDownloader/native/libGLESv2_static.lib
-/WabbajackDownloader/native/libHarfBuzzSharp.lib
-/WabbajackDownloader/native/skia.lib
-/WabbajackDownloader/native/SkiaSharp.lib
-/WabbajackDownloader/native/libANGLE_static.lib
-/WabbajackDownloader/native/libGLESv2_static.lib
-/WabbajackDownloader/native/libHarfBuzzSharp.lib
-/WabbajackDownloader/native/skia.lib
-/WabbajackDownloader/native/SkiaSharp.lib
+/.github

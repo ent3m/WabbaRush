@@ -14,12 +14,9 @@
     <FontFamily x:Key="BannerFont">
       /Assets/MountainKingRegular.ttf#Mountain King
     </FontFamily>
-    <SolidColorBrush x:Key="MainColor"
-                     Color="DarkViolet"/>
-    <SolidColorBrush x:Key="BackgroundColor"
-                     Color="Transparent"/>
-    <SolidColorBrush x:Key="HighlightColor" 
-                     Color="#a955df" Opacity="98"/>
+    <Color x:Key="MainColor">DarkViolet</Color>
+    <Color x:Key="BackgroundColor">Transparent</Color>
+    <Color x:Key="HighlightColor">#a955df</Color>
     <SolidColorBrush x:Key="WindowBackgroundColor"
                      Color="#f2f9ff" Opacity="90"/>
   </Application.Resources>
