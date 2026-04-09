@@ -7,9 +7,9 @@ using WabbajackDownloader.Common.Platform;
 using WabbajackDownloader.Common.Retry;
 using WabbajackDownloader.Common.Serialization;
 using WabbajackDownloader.Features.Dashboard;
-using WabbajackDownloader.Features.NexusMods;
 using WabbajackDownloader.Features.WabbajackModList.Services;
 using WabbajackDownloader.Features.WabbajackRepo;
+using WabbajackDownloader.Features.WebView;
 using Waypoint;
 
 namespace WabbajackDownloader;
@@ -45,6 +45,5 @@ public partial class App : Application
     }
 
     private static void RegisterFeatures(IViewRegistry views) => views
-        .RegisterDashboard()
-        .RegisterNexusMods();
+        .RegisterDashboard();
 }

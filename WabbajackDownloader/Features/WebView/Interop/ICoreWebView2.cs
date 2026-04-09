@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace WabbajackDownloader.Features.NexusMods.Interop;
+namespace WabbajackDownloader.Features.WebView.Interop;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ICoreWebView2 INTERFACE CHAIN
@@ -46,7 +46,7 @@ internal partial interface ICoreWebView2_3 : ICoreWebView2_2
 internal partial interface ICoreWebView2_4 : ICoreWebView2_3
 {
     void AddFrameCreated(
-        nint handler,   // ICoreWebView2FrameCreatedEventHandler* — stub param
+        nint handler,   // ICoreWebView2FrameCreatedEventHandler* — stub param - do not use
         out EventRegistrationToken token);
     void RemoveFrameCreated(EventRegistrationToken token);
 
@@ -89,8 +89,21 @@ internal partial interface ICoreWebView2_8 : ICoreWebView2_7
 [Guid("4d7b2eab-9fdc-468d-b998-a9260b5ed651")]
 internal partial interface ICoreWebView2_9 : ICoreWebView2_8
 {
-    void _9s01(); void _9s02(); void _9s03(); void _9s04(); void _9s05();
-    void _9s06(); void _9s07(); void _9s08(); void _9s09();
+    void AddIsDefaultDownloadDialogOpenChanged(
+        ICoreWebView2IsDefaultDownloadDialogOpenChangedEventHandler handler,
+        out EventRegistrationToken token);
+    void RemoveIsDefaultDownloadDialogOpenChanged(EventRegistrationToken token);
+
+    void GetIsDefaultDownloadDialogOpen([MarshalAs(UnmanagedType.Bool)] out bool value);
+
+    void OpenDefaultDownloadDialog();
+    void CloseDefaultDownloadDialog();
+
+    void GetDefaultDownloadDialogCornerAlignment(out WebViewDefaultDownloadDialogCornerAlignment value);
+    void PutDefaultDownloadDialogCornerAlignment(WebViewDefaultDownloadDialogCornerAlignment value);
+
+    void GetDefaultDownloadDialogMargin(out NativePoint value);
+    void PutDefaultDownloadDialogMargin(NativePoint value);
 }
 
 [GeneratedComInterface]

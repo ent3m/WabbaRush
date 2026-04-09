@@ -1,61 +1,54 @@
-﻿using Avalonia.Controls;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Diagnostics;
+using WabbajackDownloader.Common.Configuration;
+using WabbajackDownloader.Features.WebView;
 
-namespace WabbajackDownloader.Features.NexusMods;
+namespace WabbajackDownloader.Features.Dashboard;
 
-/// <summary>
-/// A wrapper around AvaloniaCefBrowser that exposes the underlying CefBrowser.
-/// </summary>
-internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
+// Users may need to manually install WebView2 runtime https://developer.microsoft.com/microsoft-edge/webview2/consumer/
+internal partial class NexusWindowViewModel : ObservableObject
 {
-    public Window Owner { get; }
+    private const string NexusLoginUrl = "https://users.nexusmods.com/auth/sign_in?redirect_url=";
+    private const string SkyUIUrl = "https://www.nexusmods.com/skyrimspecialedition/mods/12604";
+    private const string AccountUrl = "https://users.nexusmods.com/account/security";
 
-    public CefBrowser CefBrowser => UnderlyingBrowser;
+    #region Observables
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AddressText))]
+    public partial Uri Address { get; set; }
+    public string AddressText => Address.ToString();
 
-    public void LoadUrl(string url)
-        => UnderlyingBrowser.GetMainFrame().LoadUrl(url);
+    [ObservableProperty]
+    public partial IJavaScriptExecutionEngine JSExecutionEngine { get; set; }
 
-    private DownloadNothingHandler Handler
-        => DownloadHandler as DownloadNothingHandler ?? throw new InvalidHandlerException("Wrong download handler type. Expected type: " + nameof(DownloadNothingHandler));
+    [ObservableProperty]
+    public partial string? DownloadFolderPath { get; set; }
+    #endregion
 
-    private readonly SemaphoreSlim semaphore = new(1);
-
-    private readonly ILogger? logger;
-
-    public AutoDownloadCefBrowser(Window owner, Func<CefRequestContext>? contextFactory, ILogger? logger) : base(contextFactory)
+    public NexusWindowViewModel(AppSettings settings, IJavaScriptExecutionEngine executionEngine)
     {
-        Owner = owner;
-        this.logger = logger;
-        DownloadHandler = new DownloadNothingHandler();
-        LoadEnd += OnBrowserLoadEnd;
+        Address = new Uri(NexusLoginUrl + SkyUIUrl);
+        JSExecutionEngine = executionEngine;
+        DownloadFolderPath = settings.DownloadFolder;
     }
 
-    public async Task<string> GetDownloadUrlAsync(NexusDownload download, TimeSpan timeout, CancellationToken token)
+    #region Commands
+    [RelayCommand]
+    private async Task NavigationCompleted(Uri address)
     {
-        await semaphore.WaitAsync(token);
-        try
+        // This means the user has logged in successfully
+        if (address.AbsoluteUri == SkyUIUrl || address.AbsoluteUri == AccountUrl)
         {
-            logger?.LogDebug("Loading download site: {url}", download.Url);
-            var tcs = new TaskCompletionSource<string>();
-            Handler.TaskCompletionSource = tcs;
-            LoadUrl(download.Url);
-            logger?.LogDebug("Site loaded. Awaiting download for {file}.", download.FileName);
-            return await tcs.Task.WaitAsync(timeout, token);
+            Debug.WriteLine("User logged in successfully. Redirecting...");
+            Address = new Uri(SkyUIUrl);
         }
-        finally
-        {
-            Handler.TaskCompletionSource = null;
-            semaphore.Release();
-        }
-    }
 
-    /// <summary>
-    /// Automatically click on slow download as soon as the page is loaded
-    /// </summary>
-    private void OnBrowserLoadEnd(object sender, LoadEndEventArgs e)
-    {
-        if (e.Frame.IsMain)
-        {
-            e.Frame.ExecuteJavaScript("""
+        // This means we're probably on a download page
+        else if (address.AbsoluteUri.Contains("file_id"))
+            await JSExecutionEngine.ExecuteScriptAsync(AutoDownloadScript);
+    }
+    private const string AutoDownloadScript = """
                 ;(function() {
                 	function isNexusFilePage() {
                 		const url = new URL(location.href);
@@ -146,14 +139,13 @@ internal class AutoDownloadCefBrowser : AvaloniaCefBrowser, IDisposable
                 		}
                 	);
                 })();
-                """,
-                e.Frame.Url, 0);
-        }
-    }
+                """;
 
-    public new void Dispose()
+    [RelayCommand]
+    private void DownloadStarting(DownloadStartingEventArgs args)
     {
-        semaphore.Dispose();
-        base.Dispose();
+        args.Handled = true;
+        Debug.WriteLine($"Downloading file {args.DownloadOperation.ResultFilePath}");
     }
+    #endregion
 }

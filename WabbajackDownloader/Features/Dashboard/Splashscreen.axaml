@@ -10,7 +10,7 @@
         Width="280"
         Height="280"
         WindowStartupLocation="CenterScreen"
-        SystemDecorations="None"
+        WindowDecorations="None"
         Topmost="True"
         Background="Transparent"
         BorderBrush="Transparent"

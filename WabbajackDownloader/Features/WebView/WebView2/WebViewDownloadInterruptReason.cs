@@ -1,22 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿namespace WabbajackDownloader.Features.WebView;
 
-namespace WabbajackDownloader.Features.NexusMods.Interop;
-
-// EventRegistrationToken is a value type used by all add_/remove_ event pairs
-[StructLayout(LayoutKind.Sequential)]
-public struct EventRegistrationToken
-{
-    public long Value;
-}
-
-public enum CoreWebView2DownloadState
-{
-    InProgress = 0,
-    Interrupted = 1,
-    Completed = 2,
-}
-
-public enum CoreWebView2DownloadInterruptReason
+internal enum WebViewDownloadInterruptReason
 {
     None = 0,
     FileFailed = 1,

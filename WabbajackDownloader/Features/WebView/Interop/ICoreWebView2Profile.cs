@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace WabbajackDownloader.Features.NexusMods.Interop;
+namespace WabbajackDownloader.Features.WebView.Interop;
 
 [GeneratedComInterface]
 [Guid("79110ad3-cd5d-4373-8bc3-c60658f17a5f")]
@@ -12,13 +12,6 @@ internal partial interface ICoreWebView2Profile
     void GetProfilePath([MarshalAs(UnmanagedType.LPWStr)] out string path);
     void GetDefaultDownloadFolderPath([MarshalAs(UnmanagedType.LPWStr)] out string path);
     void PutDefaultDownloadFolderPath([MarshalAs(UnmanagedType.LPWStr)] string path);
-    void GetPreferredColorScheme(out CoreWebView2PreferredColorScheme preferredColorScheme);
-    void PutPreferredColorScheme(CoreWebView2PreferredColorScheme preferredColorScheme);
-}
-
-public enum CoreWebView2PreferredColorScheme
-{
-    Auto = 0,
-    Light = 1,
-    Dark = 2,
+    void GetPreferredColorScheme(out WebViewPreferredColorScheme preferredColorScheme);
+    void PutPreferredColorScheme(WebViewPreferredColorScheme preferredColorScheme);
 }

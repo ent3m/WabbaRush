@@ -1,14 +1,22 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="WabbajackDownloader.App"
-             xmlns:local="using:WabbajackDownloader"
-             xmlns:clr="using:System"
              RequestedThemeVariant="Light">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
-  
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <!-- Hide the ugly fullscreen button and title text -->
+    <Style Selector="WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+    <Style Selector="WindowDrawnDecorations /template/ Button#PART_PopoverFullScreenButton">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+    <Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
+        <Setter Property="IsVisible" Value="False"/>
+    </Style>
+  </Application.Styles>
 
   <Application.Resources>
     <FontFamily x:Key="BannerFont">
@@ -19,5 +27,9 @@
     <Color x:Key="HighlightColor">#a955df</Color>
     <SolidColorBrush x:Key="WindowBackgroundColor"
                      Color="#f2f9ff" Opacity="90"/>
+
+    <!-- Fix transparency not working in Avalonia 12 (issue #21082) -->
+    <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush"
+                     Color="Transparent"/>
   </Application.Resources>
 </Application>

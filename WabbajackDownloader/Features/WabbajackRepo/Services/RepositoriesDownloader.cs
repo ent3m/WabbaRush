@@ -33,7 +33,7 @@ public class RepositoriesDownloader(AppSettings settings, SerializerOptions seri
             var repo = await client.GetFromJsonAsync<Dictionary<string, Uri>>(repositoriesUrl, _options, token);
             if (repo is null)
             {
-                _logger.LogWarning("Repository metadata request returned no data.");
+                _logger.LogError("Repositories at {Url} return no metadata.", repositoriesUrl);
                 return;
             }
 
@@ -58,16 +58,19 @@ public class RepositoriesDownloader(AppSettings settings, SerializerOptions seri
                         foreach (var entry in metadata)
                         {
                             lists.Add(entry);
+                            _logger.LogDebug("Added '{ModListTitle}' from {Url}.", entry.Title, item.Value);
                         }
                     }
                 }
-                catch (HttpRequestException)
-                {
-                    // Attempt to fetch the metadata again if we hit TooManyRequests or a transient error
-                    throw;
-                }
                 catch (Exception ex)
                 {
+                    // Retry on TooManyRequests or a transient error. Throw again for the retry handler to catch.
+                    if (ex is HttpRequestException)
+                        throw;
+                    // Retry on Http Timeout. Throw a different exception for the retry handler to catch.
+                    else if (ex is TaskCanceledException && ex.Message.Contains("HttpClient.Timeout"))
+                        throw new Exception(ex.Message);
+
                     _logger.LogWarning(ex, "Failed to fetch ModListMetadata from {Repository} at {Url}. Skipping.", item.Key, item.Value);
                 }
             }

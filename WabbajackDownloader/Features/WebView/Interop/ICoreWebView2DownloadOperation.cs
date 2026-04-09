@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
-namespace WabbajackDownloader.Features.NexusMods.Interop;
+namespace WabbajackDownloader.Features.WebView.Interop;
 
 [GeneratedComInterface]
 [Guid("3d6b6cf2-afe1-44c7-a995-c65117714336")]
@@ -14,7 +14,7 @@ internal partial interface ICoreWebView2DownloadOperation
     void RemoveBytesReceivedChanged(EventRegistrationToken token);
 
     void AddEstimatedEndTimeChanged(
-        nint handler,   // stub — we don't need this event
+        ICoreWebView2EstimatedEndTimeChangedEventHandler handler,
         out EventRegistrationToken token);
     void RemoveEstimatedEndTimeChanged(EventRegistrationToken token);
 
@@ -30,8 +30,8 @@ internal partial interface ICoreWebView2DownloadOperation
     void GetBytesReceived(out long value);
     void GetEstimatedEndTime([MarshalAs(UnmanagedType.LPWStr)] out string value);
     void GetResultFilePath([MarshalAs(UnmanagedType.LPWStr)] out string value);
-    void GetState(out CoreWebView2DownloadState value);
-    void GetInterruptReason(out CoreWebView2DownloadInterruptReason value);
+    void GetState(out WebViewDownloadState value);
+    void GetInterruptReason(out WebViewDownloadInterruptReason value);
     void Cancel();
     void Pause();
     void Resume();

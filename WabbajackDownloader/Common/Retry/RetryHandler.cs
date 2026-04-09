@@ -32,6 +32,7 @@ public class RetryHandler<TCaller>(RetryOptions options, ILogger<TCaller> logger
         }
         catch (OperationCanceledException)
         {
+            _logger.LogInformation("Operation was cancelled. Retry aborted.");
             throw;
         }
         catch (Exception ex)

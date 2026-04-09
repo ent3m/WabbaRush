@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations;
 using System.IO;
 using WabbajackDownloader.Common.Configuration;
 using WabbajackDownloader.Common.Platform;
-using WabbajackDownloader.Features.NexusMods;
 using WabbajackDownloader.Features.WabbajackRepo;
 using Waypoint;
 
