@@ -359,8 +359,5 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-/WabbajackDownloader/Assets/wabbajack.ico
-/WabbajackDownloader/Assets/wabbajack.png
-/WabbajackDownloader/Assets/MountainKingRegular.ttf
-/WabbajackDownloader/Assets/nexus.png
-/.github
+/WabbajackDownloader/Assets/Fonts
+/NexusDownloadScript.js
