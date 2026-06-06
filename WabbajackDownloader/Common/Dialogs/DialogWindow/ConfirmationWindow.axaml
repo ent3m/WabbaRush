@@ -1,0 +1,59 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:WabbajackDownloader.Common.Dialogs"
+        x:Class="WabbajackDownloader.Common.Dialogs.ConfirmationWindow"
+        x:DataType="local:ConfirmationWindowViewModel"
+        WindowStartupLocation="CenterOwner"
+        WindowDecorations="BorderOnly"
+        ShowInTaskbar="False"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        Background="Transparent"
+        Title="{Binding Title}">
+
+  <Border Background="{DynamicResource BackgroundColor}"
+          BorderBrush="{DynamicResource SystemBaseMediumLowColor}"
+          BorderThickness="2"
+          CornerRadius="8"
+          Padding="16,20">
+
+    <Grid RowDefinitions="Auto,*,Auto" RowSpacing="16">
+
+      <!-- Header Area -->
+      <TextBlock Grid.Row="0"
+                 Text="{Binding Title}"
+                 FontSize="18"
+                 FontWeight="SemiBold"
+                 VerticalAlignment="Center"/>
+
+      <!-- Message Area -->
+      <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="12">
+        <PathIcon Data="{Binding Icon, TargetNullValue={StaticResource WarningIcon}}"
+                  Foreground="{DynamicResource AccentBrush}"
+                  VerticalAlignment="Center"
+                  Width="28"
+                  Height="28"/>
+        <TextBlock Text="{Binding Message}"
+                   TextWrapping="Wrap"
+                   FontSize="14"
+                   LineHeight="20"/>
+      </StackPanel>
+
+      <!-- Action Buttons -->
+      <StackPanel Grid.Row="2"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Right"
+                  Spacing="12">
+
+        <Button Content="{Binding ConfirmMessage}"
+                Command="{Binding ConfirmCommand}"
+                IsDefault="True"/>
+
+        <Button Content="{Binding CancelMessage}"
+                Command="{Binding CancelCommand}"
+                IsCancel="True"/>
+      </StackPanel>
+
+    </Grid>
+  </Border>
+</Window>

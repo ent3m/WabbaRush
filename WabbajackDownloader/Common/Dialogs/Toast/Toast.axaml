@@ -1,0 +1,68 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:WabbajackDownloader.Common.Dialogs"
+             x:Class="WabbajackDownloader.Common.Dialogs.Toast"
+             x:DataType="local:ToastViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Border.Error">
+      <Setter Property="Background" Value="{DynamicResource ErrorBackgroundColor}"/>
+      <Style Selector="^ PathIcon#ToastIcon">
+        <Setter Property="Data" Value="{StaticResource ErrorIcon}"/>
+      </Style>
+    </Style>
+    <Style Selector="Border.Information">
+      <Setter Property="Background" Value="{DynamicResource InfoBackgroundColor}"/>
+      <Style Selector="^ PathIcon#ToastIcon">
+        <Setter Property="Data" Value="{StaticResource InfoIcon}"/>
+      </Style>
+    </Style>
+    <Style Selector="Border.Neutral">
+      <Setter Property="Background" Value="{DynamicResource BackgroundColor}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+      <Setter Property="BorderThickness" Value="2"/>
+      <Style Selector="^ PathIcon#ToastIcon">
+        <Setter Property="Data" Value="{StaticResource SpeechBubbleIcon}"/>
+      </Style>
+    </Style>
+    <Style Selector="Border.Success">
+      <Setter Property="Background" Value="{DynamicResource SuccessBackgroundColor}"/>
+      <Style Selector="^ PathIcon#ToastIcon">
+        <Setter Property="Data" Value="{StaticResource SuccessIcon}"/>
+      </Style>
+    </Style>
+    <Style Selector="Border.Warning">
+      <Setter Property="Background" Value="{DynamicResource WarningBackgroundColor}"/>
+      <Style Selector="^ PathIcon#ToastIcon">
+        <Setter Property="Data" Value="{StaticResource WarningIcon}"/>
+      </Style>
+    </Style>
+  </UserControl.Styles>
+
+  <Border Classes.Error="{Binding IsError}"
+          Classes.Information="{Binding IsInformation}"
+          Classes.Neutral="{Binding IsNeutral}"
+          Classes.Success="{Binding IsSuccess}"
+          Classes.Warning="{Binding IsWarning}"
+          CornerRadius="8"
+          Padding="16,20">
+
+    <Grid ColumnDefinitions="Auto, *">
+
+      <PathIcon Grid.Column="0"
+                Name="ToastIcon"
+                Foreground="{DynamicResource SystemBaseMediumHighColor}"
+                Width="24"
+                Height="24"
+                VerticalAlignment="Center"
+                Margin="0,0,16,0"/>
+
+      <TextBlock Grid.Column="1"
+                 Text="{Binding Message}"
+                 FontSize="{Binding FontSize}"
+                 TextWrapping="Wrap"
+                 VerticalAlignment="Center"/>
+
+    </Grid>
+  </Border>
+</UserControl>
