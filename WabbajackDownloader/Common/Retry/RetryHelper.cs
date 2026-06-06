@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Common.Retry;
 
-public static class IntegralNumericExtensions
+internal static class RetryHelper
 {
     public static string DisplayWithSuffix<T>(this T num) where T : IBinaryInteger<T>
     {
@@ -14,5 +14,11 @@ public static class IntegralNumericExtensions
         if (number.EndsWith('2')) return number + "nd";
         if (number.EndsWith('3')) return number + "rd";
         return number + "th";
+    }
+
+    public static int GetNextDelay(this RetryOptions options, int currentDelay, out int actualDelay)
+    {
+        actualDelay = currentDelay + Random.Shared.Next(options.Jitter);
+        return (int)Math.Min(currentDelay * options.Multiplier, int.MaxValue);
     }
 }
