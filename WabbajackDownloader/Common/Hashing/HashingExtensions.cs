@@ -1,6 +1,6 @@
 ﻿namespace WabbajackDownloader.Common.Hashing;
 
-public static class HashingExtensions
+internal static class HashingExtensions
 {
     public static void ThrowOnMismatch(this Hash computed, Hash expected, string name)
     {

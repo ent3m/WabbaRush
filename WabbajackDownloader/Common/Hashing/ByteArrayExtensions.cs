@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Common.Hashing;
 
-public static class ByteArrayExtensions
+internal static class ByteArrayExtensions
 {
     public static async ValueTask<Hash> Hash(this byte[] data)
     {

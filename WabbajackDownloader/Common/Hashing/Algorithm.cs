@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Common.Hashing;
 
-public struct HashAlgorithm
+internal struct HashAlgorithm
 {
     private static readonly IReadOnlyList<ulong> Primes64 =
         [

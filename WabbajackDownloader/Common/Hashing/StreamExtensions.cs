@@ -3,9 +3,9 @@ using System.IO;
 
 namespace WabbajackDownloader.Common.Hashing;
 
-public static class StreamExtensions
+internal static class StreamExtensions
 {
-    public static async Task<Hash> Hash(this Stream stream, int bufferSize, CancellationToken token)
+    public static async Task<Hash> Hash(this Stream stream, int bufferSize = 512 * 1024, CancellationToken token = default)
     {
         return await stream.HashingCopy(Stream.Null, bufferSize, token);
     }

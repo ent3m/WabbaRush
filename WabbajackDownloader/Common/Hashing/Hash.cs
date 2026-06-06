@@ -2,14 +2,13 @@ using System.Buffers.Text;
 
 namespace WabbajackDownloader.Common.Hashing;
 
-// Adapted from https://github.com/wabbajack-tools/wabbajack/tree/main/Wabbajack.Hashing.xxHash64
-public readonly struct Hash(ulong code) : IEquatable<Hash>, IComparable<Hash>
+internal readonly struct Hash(ulong code) : IEquatable<Hash>, IComparable<Hash>
 {
     private readonly ulong _code = code;
 
     public override string ToString()
     {
-        return BitConverter.GetBytes(_code).ToBase64();
+        return ToBase64();
     }
 
     public bool Equals(Hash other)
@@ -51,7 +50,7 @@ public readonly struct Hash(ulong code) : IEquatable<Hash>, IComparable<Hash>
 
     public static explicit operator long(Hash a)
     {
-        return BitConverter.ToInt64(BitConverter.GetBytes(a._code));
+        return unchecked((long)a._code);
     }
 
     public string ToBase64()
@@ -84,7 +83,7 @@ public readonly struct Hash(ulong code) : IEquatable<Hash>, IComparable<Hash>
 
     public static Hash FromLong(in long argHash)
     {
-        return new Hash(BitConverter.ToUInt64(BitConverter.GetBytes(argHash)));
+        return new Hash(unchecked((ulong)argHash));
     }
 
     public static Hash FromULong(in ulong argHash)

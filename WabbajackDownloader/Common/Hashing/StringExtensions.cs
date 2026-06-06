@@ -3,7 +3,7 @@ using System.Text;
 
 namespace WabbajackDownloader.Common.Hashing;
 
-public static class StringExtensions
+internal static class StringExtensions
 {
     public static string ToHex(this byte[] bytes)
     {
