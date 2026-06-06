@@ -1,35 +1,61 @@
-[![Image](https://shields.io/badge/v2.6-WabbaRush-blue)](https://github.com/ent3m/WabbaRush/releases/tag/v2.6)
-# Description
-**WabbaRush** is an automatic downloader for **Wabbajack**. It extracts mods from wabbajack file and downloads them automatically so you don't have to click *Slow Download* thousands of times. It works for free accounts - premium membership is not required.
-# Usage
-![Image](https://raw.githubusercontent.com/ent3m/WabbaRush/refs/heads/master/WabbajackDownloader/Assets/screenshot.png)
+# WabbaRush [![Latest Release](https://img.shields.io/github/v/release/ent3m/WabbaRush?colors=blue)](https://github.com/ent3m/WabbaRush/releases)
 
-1. Select a wabbajack mod list.<br>
-*Or*<br>
-Check **Use local wabbajack file** in **Options** to select a file on disk.
-2. Select a download folder.
-3. Login to Nexus account.<br>
-Wait until you are taken to *SkyUI* page, then close the Nexus window.
-5. Click on **Download** and wait.<br>
+WabbaRush automates Wabbajack modlist downloads for free Nexus users.
 
-Check out the [video tutorial](https://youtu.be/1pPh5ZbQRUs).<br>
-You can fine-tune the app's behaviors in **settings.json**. The app needs to be re-launched to read any changes.<br>
+## Features
 
-# Installation
-Download the latest [release](https://github.com/ent3m/WabbaRush/releases).<br>
-Extract and run **WabbaRush.exe**.<br><br>
-Requires **Windows 10 x64** or newer.<br><br>
-To build your own binaries, you will need to supply *wabbajack.png*, *wabbajack.ico*, and *nexus.png* in */Assets*. You also need to specify a font in *App.axaml*. They were not included for copyright reasons.
+| | |
+| :--- | :--- |
+| **Full Automation** | Loads your `.wabbajack` file (from your PC or the cloud) and downloads every mod completely unattended. No manual clicking required. |
+| **Smart Resume** | Safely close the app at any time. It automatically scans your folder and picks up where you left off on the next download. |
+| **Account Protection** | Automatically backs off if Nexus limits your requests, keeping your account safe from bans. |
+| **Modlist Partitioning** | Split a massive modlist across multiple computers or accounts to finish even faster. |
+| **Folder Management** | Optionally delete outdated archives and unrelated files from download folder. |
+| **Customization** | Fine-tune download behaviors from within the app or via `settings.json`. |
 
-# Known Issues
-- Sometimes you get **connection timeout** in a long download session. This is caused by the browser freezing/unable to load download page. When it happens, restart the app and resume downloading.
-Unfortunately, this is an issue with CefGlue and there's nothing I can do about it.
+## Usage
 
-# Disclaimer
-This software is provided for educational, research, and personal use only. It is not officially affiliated, endorsed, or supported by Nexus Mods, Wabbajack, or any other third-party entities. The developer of this application does not endorse or promote any use that would violate the terms of service, policies, or legal rights of any third parties, including Nexus Mods or any other service providers.
+1. Select a download folder and a modlist.
 
-#### Nexus Mods Policies:
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/faa4ed89-954e-4d28-a86f-d8c55ea34f2c">
+  <img width="85%" alt="AppSetup" src="https://github.com/user-attachments/assets/f70cf039-c934-4f6b-ae20-1cbf9edb1371">
+</picture>
+
+2. Customize download behaviors in settings.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/8f890606-b70d-429c-af92-1a6c315a23bf">
+  <img width="85%" alt="AppSettings" src="https://github.com/user-attachments/assets/50af460a-0027-477b-ab32-47a0804b8e08">
+</picture>
+
+3. Login, click download, and let it run.
+<img width="85%" alt="WabbaRushDemo" src="https://github.com/user-attachments/assets/b3bf5d60-4eee-4085-bf3e-1108467459c0" />
+
+## Installation
+- Download the latest [release](https://github.com/ent3m/WabbaRush/releases).
+- Extract and run **WabbaRush.exe**.
+- Requires Windows 10/11 + [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (pre-installed on most machines).
+
+## Build it yourself
+
+### Requirements
+- Visual Studio 2026
+- .NET desktop development workload
+- Desktop development with C++ workload
+
+```
+git clone https://github.com/ent3m/WabbaRush.git
+cd WabbajackDownloader
+dotnet publish -c Release -r win-x64
+```
+
+The executable will be generated in `WabbajackDownloader\bin\Release\net10.0\win-x64\publish\WabbaRush.exe`.
+
+## Disclaimer
+
+### Nexus Mods policies
 The use of automation is explicitly prohibited by Nexus Mods, as stated in their [Terms of Service](https://help.nexusmods.com/article/18-terms-of-service). Any attempts to automate downloads or related actions may result in account suspension or other enforcement actions by the service provider.
 
-#### Use at your own risks:
-Users are solely responsible for ensuring that their use of this application complies with the terms of service of any third-party services involved, as well as with all applicable laws and regulations. By using this software, you expressly acknowledge and agree to assume all risks associated with its use, including the possibility of legal action from third parties, and release the developer from any and all liability arising from such use.
+### Use at your own risk
+This software is provided for educational, research, and personal use only. It is not officially affiliated, endorsed, or supported by Nexus Mods, Wabbajack, or any other third-party entities. The developer of this application does not endorse or promote any use that would violate the terms of service, policies, or legal rights of any third parties, including Nexus Mods or any other service providers. By using this software, you expressly acknowledge and agree to assume all risks associated with its use, including the possibility of legal action from third parties, and release the developer from any and all liability arising from such use.

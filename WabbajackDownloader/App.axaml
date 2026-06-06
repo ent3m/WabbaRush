@@ -1,35 +1,25 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="WabbajackDownloader.App"
-             RequestedThemeVariant="Light">
+             x:Class="WabbajackDownloader.App">
 
   <Application.Styles>
-    <FluentTheme />
-
-    <!-- Hide the ugly fullscreen button and title text -->
-    <Style Selector="WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
-        <Setter Property="IsVisible" Value="False"/>
-    </Style>
-    <Style Selector="WindowDrawnDecorations /template/ Button#PART_PopoverFullScreenButton">
-        <Setter Property="IsVisible" Value="False"/>
-    </Style>
-    <Style Selector="WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
-        <Setter Property="IsVisible" Value="False"/>
-    </Style>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#9500FF"/>
+        <ColorPaletteResources x:Key="Dark" Accent="#9547CC"/>
+      </FluentTheme.Palettes>
+    </FluentTheme>
   </Application.Styles>
 
   <Application.Resources>
-    <FontFamily x:Key="BannerFont">
-      /Assets/MountainKingRegular.ttf#Mountain King
-    </FontFamily>
-    <Color x:Key="MainColor">DarkViolet</Color>
-    <Color x:Key="BackgroundColor">Transparent</Color>
-    <Color x:Key="HighlightColor">#a955df</Color>
-    <SolidColorBrush x:Key="WindowBackgroundColor"
-                     Color="#f2f9ff" Opacity="90"/>
-
-    <!-- Fix transparency not working in Avalonia 12 (issue #21082) -->
-    <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush"
-                     Color="Transparent"/>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <MergeResourceInclude Source="/Common/Themes/ColorPalette.axaml"/>
+        <MergeResourceInclude Source="/Common/Themes/Resources.axaml"/>
+        <MergeResourceInclude Source="/Common/Themes/WindowDrawnDecorationsControlTheme.axaml"/>
+        <MergeResourceInclude Source="/Common/Converters/Converters.axaml" />
+        <MergeResourceInclude Source="/Common/Progress/CircularProgressBar.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
   </Application.Resources>
 </Application>
