@@ -12,11 +12,14 @@ namespace WabbajackDownloader.Features.WebView;
 /// <summary>
 /// A control that extends NativeWebView to provide additional functionalities specific to WebView2.
 /// </summary>
-internal class WebView2 : NativeWebView
+internal sealed class WebView2 : NativeWebView
 {
     #region Avalonia Properties
     public static readonly StyledProperty<bool> AllowPopupProperty =
         AvaloniaProperty.Register<WebView2, bool>(nameof(AllowPopup), defaultValue: true);
+    /// <summary>
+    /// Whether to allow popups (new windows) from the web content. If false, all popups will be blocked.
+    /// </summary>
     public bool AllowPopup
     {
         get => GetValue(AllowPopupProperty);
@@ -44,9 +47,11 @@ internal class WebView2 : NativeWebView
         set => SetValue(DefaultDownloadFolderPathProperty, value);
     }
 
-    // Parameter type: Uri
     public static readonly StyledProperty<ICommand?> NavigationCompletedCommandProperty =
         AvaloniaProperty.Register<WebView2, ICommand?>(nameof(NavigationCompletedCommand));
+    /// <summary>
+    /// The command to execute when a navigation is completed successfully. The command parameter is the <see cref="Uri"/> of the destination.
+    /// </summary>
     public ICommand? NavigationCompletedCommand
     {
         get => GetValue(NavigationCompletedCommandProperty);
@@ -62,9 +67,11 @@ internal class WebView2 : NativeWebView
             command.Execute(e.Request);
     }
 
-    // Parameter type: DownloadStartingEventArgs
     public static readonly StyledProperty<ICommand?> DownloadStartingCommandProperty =
         AvaloniaProperty.Register<WebView2, ICommand?>(nameof(DownloadStartingCommand));
+    /// <summary>
+    /// The command to execute when a download is starting. The command parameter is the <see cref="DownloadStartingEventArgs"/> of that download.
+    /// </summary>
     public ICommand? DownloadStartingCommand
     {
         get => GetValue(DownloadStartingCommandProperty);
@@ -90,18 +97,24 @@ internal class WebView2 : NativeWebView
     public static readonly StyledProperty<WebViewDefaultDownloadDialogCornerAlignment> DefaultDownloadDialogCornerAlignmentProperty =
         AvaloniaProperty.Register<WebView2, WebViewDefaultDownloadDialogCornerAlignment>(nameof(DefaultDownloadDialogCornerAlignment),
             defaultValue: WebViewDefaultDownloadDialogCornerAlignment.TopRight);
+    /// <summary>
+    /// Get or set the corner alignment of the download dialog.
+    /// </summary>
     public WebViewDefaultDownloadDialogCornerAlignment DefaultDownloadDialogCornerAlignment
     {
         get => GetValue(DefaultDownloadDialogCornerAlignmentProperty);
         set => SetValue(DefaultDownloadDialogCornerAlignmentProperty, value);
     }
 
-    public static readonly StyledProperty<IJavaScriptExecutionEngine?> JavaScriptExecutionEngineProperty =
-        AvaloniaProperty.Register<WebView2, IJavaScriptExecutionEngine?>(nameof(JavaScriptExecutionEngine));
-    public IJavaScriptExecutionEngine? JavaScriptExecutionEngine
+    public static readonly StyledProperty<IJavaScriptRunner?> JavaScriptRunnerProperty =
+        AvaloniaProperty.Register<WebView2, IJavaScriptRunner?>(nameof(JavaScriptRunner));
+    /// <summary>
+    /// Allows JavaScript execution and web message reception once attached to this WebView.
+    /// </summary>
+    public IJavaScriptRunner? JavaScriptRunner
     {
-        get => GetValue(JavaScriptExecutionEngineProperty);
-        set => SetValue(JavaScriptExecutionEngineProperty, value);
+        get => GetValue(JavaScriptRunnerProperty);
+        set => SetValue(JavaScriptRunnerProperty, value);
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -121,6 +134,7 @@ internal class WebView2 : NativeWebView
         {
             // Make sure path is propagated to CoreWebView2 profile
             var newValue = change.GetNewValue<string?>() ?? string.Empty;
+            if (_coreWebView is null) return;  // CoreWebView not initialized yet
             _coreWebView.GetProfile(out var profile);
             profile.PutDefaultDownloadFolderPath(newValue);
         }
@@ -128,23 +142,26 @@ internal class WebView2 : NativeWebView
         {
             // Make sure alignment is propagated to CoreWebView2
             var newValue = change.GetNewValue<WebViewDefaultDownloadDialogCornerAlignment>();
+            if (_coreWebView is null) return;  // CoreWebView not initialized yet
             _coreWebView.PutDefaultDownloadDialogCornerAlignment(newValue);
         }
-        else if (change.Property == JavaScriptExecutionEngineProperty)
+        else if (change.Property == JavaScriptRunnerProperty)
         {
-            // Detach old engine to prevent memory leak
-            var oldValue = change.GetOldValue<IJavaScriptExecutionEngine?>();
-            oldValue?.Detach();
+            // Detach old engine
+            var oldValue = change.GetOldValue<IJavaScriptRunner?>();
+            if (oldValue is IAttachableProperty<NativeWebView> oldAttachable)
+                oldAttachable.Detach();
             // Attach new engine
-            var newValue = change.GetNewValue<IJavaScriptExecutionEngine?>();
-            newValue?.Attach(this);
+            var newValue = change.GetNewValue<IJavaScriptRunner?>();
+            if (newValue is IAttachableProperty<NativeWebView> newAttachable)
+                newAttachable.Attach(this);
         }
     }
     #endregion
 
     private static readonly StrategyBasedComWrappers ComWrappers = new();
     private EventRegistrationToken _downloadStartingToken;
-#pragma warning disable CS8618 // _coreWebView assigned in OnAdapterCreated, which is guaranteed to be called before the WebView2 is used.
+#pragma warning disable CS8618 // _coreWebView assigned in OnAdapterCreated, which is guaranteed to be called before it is used
     private ICoreWebView2_13 _coreWebView;
 
     public WebView2()
@@ -155,6 +172,7 @@ internal class WebView2 : NativeWebView
 #pragma warning restore CS8618
     private void OnAdapterCreated(object? sender, WebViewAdapterEventArgs args) => Initialize();
     private void OnAdapterDestroyed(object? sender, WebViewAdapterEventArgs args) => Cleanup();
+
     // Cleanup on unloaded as well, because OnAdapterDestroyed is not reliably invoked
     protected override void OnUnloaded(RoutedEventArgs e)
     {
@@ -166,10 +184,18 @@ internal class WebView2 : NativeWebView
     {
         _coreWebView = GetCoreWebView();
 
-        // Kickstart the DefaultDownloadFolderPath property with the current value from the profile
+        // Make sure DefaultDownloadFolderPath and DefaultDownloadDialogCornerAlignment properties are in sync with binding values
         _coreWebView.GetProfile(out var profile);
-        profile.GetDefaultDownloadFolderPath(out var path);
-        SetValue(DefaultDownloadFolderPathProperty, path);
+        if (string.IsNullOrWhiteSpace(DefaultDownloadFolderPath))
+        {
+            profile.GetDefaultDownloadFolderPath(out var path);
+            SetValue(DefaultDownloadFolderPathProperty, path);
+        }
+        else
+        {
+            profile.PutDefaultDownloadFolderPath(DefaultDownloadFolderPath);
+        }
+        _coreWebView.PutDefaultDownloadDialogCornerAlignment(DefaultDownloadDialogCornerAlignment);
 
         // Hook up the download starting event to raise our own DownloadStarting event and command
         var downloadStartingHandler = new CoreWebView2DownloadStartingHandler(OnDownloadStarting);
@@ -195,7 +221,11 @@ internal class WebView2 : NativeWebView
     {
         // Remove all references to this object from CoreWebView2
         _coreWebView?.RemoveDownloadStarting(_downloadStartingToken);
-        // Detach JavaScript execution engine to prevent memory leak
-        JavaScriptExecutionEngine?.Detach();
+
+        // Detach IAttachable to prevent memory leak
+        if (JavaScriptRunner is IAttachableProperty<NativeWebView> jsAttachable)
+            jsAttachable.Detach();
+
+        _coreWebView = null!;
     }
 }

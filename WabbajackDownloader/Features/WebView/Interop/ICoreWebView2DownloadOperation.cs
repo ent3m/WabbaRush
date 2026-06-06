@@ -7,7 +7,6 @@ namespace WabbajackDownloader.Features.WebView.Interop;
 [Guid("3d6b6cf2-afe1-44c7-a995-c65117714336")]
 internal partial interface ICoreWebView2DownloadOperation
 {
-    // Events for monitoring progress
     void AddBytesReceivedChanged(
         ICoreWebView2BytesReceivedChangedEventHandler handler,
         out EventRegistrationToken token);

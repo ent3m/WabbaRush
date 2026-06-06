@@ -5,7 +5,7 @@ namespace WabbajackDownloader.Features.WebView;
 /// <summary>
 /// A wrapper around <see cref="ICoreWebView2DownloadStartingEventArgs"/> that controls a WebView2 download that is starting.
 /// </summary>
-internal class DownloadStartingEventArgs(ICoreWebView2DownloadStartingEventArgs args) : EventArgs
+internal sealed class DownloadStartingEventArgs(ICoreWebView2DownloadStartingEventArgs args) : EventArgs
 {
     /// <summary>
     /// Indicates whether to cancel the download.

@@ -3,9 +3,9 @@
 namespace WabbajackDownloader.Features.WebView;
 
 /// <summary>
-/// An abstraction over WebView2's JavaScript execution.
+/// An abstraction over NativeWebView's JavaScript execution APIs.
 /// </summary>
-internal interface IJavaScriptExecutionEngine : IAttachableProperty<NativeWebView>
+internal interface IJavaScriptRunner
 {
     /// <summary>
     /// Runs JavaScript code from the <paramref name="javascript"/> parameter in the current top-level document rendered in the WebView.
@@ -17,4 +17,14 @@ internal interface IJavaScriptExecutionEngine : IAttachableProperty<NativeWebVie
     /// A function that has no explicit return value returns undefined. If the script that was run throws an unhandled exception, then the result is also null.
     /// </remarks>
     Task<string?> ExecuteScriptAsync(string javascript);
+
+    /// <summary>
+    /// WebMessageReceived is raised when the <c>IsWebMessageEnabled</c> setting is set and the top-level document of the WebView 
+    /// runs <c>window.chrome.webview.postMessage</c> or <c>window.chrome.webview.postMessageWithAdditionalObjects</c>.
+    /// </summary>
+    /// <remarks>
+    /// The <c>postMessage</c> function is <c>void postMessage(object)</c> where object is any object supported by JSON conversion.
+    /// When <c>postMessage</c> is called, the handler's Invoke method will be called with the <c>object</c> parameter <c>postMessage</c> converted to a JSON string.
+    /// </remarks>
+    event EventHandler<WebMessageReceivedEventArgs>? WebMessageReceived;
 }

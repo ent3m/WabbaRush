@@ -3,7 +3,6 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace WabbajackDownloader.Features.WebView.Interop;
 
-// This is the COM interface WebView2 calls back into when a download starts.
 [GeneratedComInterface]
 [Guid("efedc989-c396-41ca-83f7-07f845a55724")]
 internal partial interface ICoreWebView2DownloadStartingEventHandler
@@ -21,6 +20,7 @@ internal partial class CoreWebView2DownloadStartingHandler : ICoreWebView2Downlo
     public CoreWebView2DownloadStartingHandler(Action<ICoreWebView2DownloadStartingEventArgs?> callback)
         => _callback = callback;
 
+    // CoreWebView2 invokes this when a download starts
     public void Invoke(ICoreWebView2? sender, ICoreWebView2DownloadStartingEventArgs? args)
         => _callback(args);
 }

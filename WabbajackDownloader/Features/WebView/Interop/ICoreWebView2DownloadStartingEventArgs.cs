@@ -15,7 +15,6 @@ internal partial interface ICoreWebView2DownloadStartingEventArgs
     void GetResultFilePath([MarshalAs(UnmanagedType.LPWStr)] out string value);
     void PutResultFilePath([MarshalAs(UnmanagedType.LPWStr)] string value);
 
-    // BOOL is a 4-byte int in COM, not a 1-byte C# bool
     void GetHandled([MarshalAs(UnmanagedType.Bool)] out bool value);
     void PutHandled([MarshalAs(UnmanagedType.Bool)] bool value);
 

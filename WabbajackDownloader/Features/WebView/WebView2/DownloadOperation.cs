@@ -6,17 +6,17 @@ namespace WabbajackDownloader.Features.WebView;
 /// <summary>
 /// A wrapper around <see cref="ICoreWebView2DownloadOperation"/> that provides events and properties for monitoring and controlling a download operation in WebView2.
 /// </summary>
-internal class DownloadOperation : IDisposable
+internal sealed class DownloadOperation : IDisposable
 {
     /// <summary>
     /// Event raised when the bytes received count is updated.
     /// </summary>
-    public event Action? BytesReceivedChanged;
+    public event EventHandler? BytesReceivedChanged;
 
     /// <summary>
     /// Event raised when the estimated end time changes.
     /// </summary>
-    public event Action? EstimatedTimeEndChanged;
+    public event EventHandler? EstimatedTimeEndChanged;
 
     /// <summary>
     /// Event raised when the state of the download changes.
@@ -25,7 +25,7 @@ internal class DownloadOperation : IDisposable
     /// Use <see cref="DownloadOperation.State"/> to get the current state,
     /// and <see cref="DownloadOperation.InterruptReason"/> to get the reason if the download is interrupted.
     /// </remarks>
-    public event Action? StateChanged;
+    public event EventHandler? StateChanged;
 
     /// <summary>
     /// The number of bytes that have been written to the download file.
@@ -216,11 +216,11 @@ internal class DownloadOperation : IDisposable
     private readonly EventRegistrationToken _stateChangedToken;
 
     private void OnBytesReceivedChanged(ICoreWebView2DownloadOperation? sender) =>
-        BytesReceivedChanged?.Invoke();
+        BytesReceivedChanged?.Invoke(this, EventArgs.Empty);
 
     private void OnEstimatedEndTimeChanged(ICoreWebView2DownloadOperation? sender) =>
-        EstimatedTimeEndChanged?.Invoke();
+        EstimatedTimeEndChanged?.Invoke(this, EventArgs.Empty);
 
     private void OnStateChanged(ICoreWebView2DownloadOperation? sender) =>
-        StateChanged?.Invoke();
+        StateChanged?.Invoke(this, EventArgs.Empty);
 }

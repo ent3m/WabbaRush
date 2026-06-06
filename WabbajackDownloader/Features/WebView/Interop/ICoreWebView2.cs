@@ -3,11 +3,6 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace WabbajackDownloader.Features.WebView.Interop;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ICoreWebView2 INTERFACE CHAIN
-// We only care about ICoreWebView2_4 and ICoreWebView2_13
-// ─────────────────────────────────────────────────────────────────────────────
-
 [GeneratedComInterface]
 [Guid("76eceacb-0462-4d94-ac83-423a6793775e")]
 internal partial interface ICoreWebView2
