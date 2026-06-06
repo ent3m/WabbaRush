@@ -1,0 +1,71 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:WabbajackDownloader.Common.Progress">
+
+  <ControlTheme x:Key="{x:Type controls:CircularProgressBar}" TargetType="controls:CircularProgressBar">
+
+    <Setter Property="Width" Value="64" />
+    <Setter Property="Height" Value="64" />
+    <Setter Property="StrokeThickness" Value="7" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="TrackBrush" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    <Setter Property="ProgressBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="ProgressTextFormat" Value="{}{1:0}%" />
+
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch"
+              IsHitTestVisible="False">
+
+          <TextBlock x:Name="PART_DefaultProgressText"
+                     Text="{TemplateBinding ProgressText}"
+                     HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                     VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                     TextAlignment="Center"
+                     FontFamily="{TemplateBinding FontFamily}"
+                     FontSize="{TemplateBinding FontSize}"
+                     FontStyle="{TemplateBinding FontStyle}"
+                     FontWeight="{TemplateBinding FontWeight}"
+                     Foreground="{TemplateBinding Foreground}" />
+
+          <ContentPresenter x:Name="PART_ContentPresenter"
+                            Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                            IsVisible="False" />
+
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+
+    <Style Selector="^:has-content /template/ TextBlock#PART_DefaultProgressText">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^:has-content /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+
+    <Style Selector="^:indeterminate /template/ TextBlock#PART_DefaultProgressText">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <Style Selector="^:indeterminate">
+      <Style.Animations>
+        <Animation IterationCount="Infinite" Duration="0:0:1.25">
+          <KeyFrame KeyTime="0:0:0">
+            <Setter Property="IndeterminateAngle" Value="0" />
+          </KeyFrame>
+          <KeyFrame KeyTime="0:0:1.25">
+            <Setter Property="IndeterminateAngle" Value="360" />
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
+  </ControlTheme>
+
+</ResourceDictionary>

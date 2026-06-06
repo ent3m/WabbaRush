@@ -2,24 +2,30 @@
 
 internal static class IntegralNumericExtensions
 {
-    public static string DisplayByteSize(this long bytes)
+    public static string FormatByteSize(this long bytes)
+        => FormatMetric(bytes, SizeUnits);
+
+    public static string FormatByteRate(this double bytesPerSecond)
     {
-        if (bytes < 0)
-            return "NaN";
+        if (double.IsNaN(bytesPerSecond) || bytesPerSecond < 0) return "0 B/s";
+        if (double.IsInfinity(bytesPerSecond)) return "∞ B/s";
 
-        if (bytes < 1024)
-            return $"{bytes} B";
-
-        double size = bytes;
-        int order = -1;
-        do
-        {
-            size /= 1024;
-            order++;
-        }
-        while (size > 1024 && order < sizeSuffixes.Length - 1);
-
-        return ($"{size:0.#} {sizeSuffixes[order]}");
+        return FormatMetric(bytesPerSecond, RateUnits);
     }
-    private readonly static string[] sizeSuffixes = ["KB", "MB", "GB", "TB", "PB"];
+
+    private static string FormatMetric(double value, ReadOnlySpan<string> units)
+    {
+        // Avoid 999.995 being rounded up to 1000 under under "0.##" format.
+        const double threshold = 999.995;
+        int unitIndex = 0;
+        while (value >= threshold && unitIndex < units.Length - 1)
+        {
+            value /= 1000;
+            unitIndex++;
+        }
+        return $"{value:0.##} {units[unitIndex]}";
+    }
+
+    private static readonly string[] SizeUnits = ["B", "KB", "MB", "GB", "TB", "PB"];
+    private static readonly string[] RateUnits = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s"];
 }
