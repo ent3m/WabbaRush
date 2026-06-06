@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackModList;
 
-public class FileDefinition
+internal sealed class FileDefinition
 {
     public string? Author { get; set; }
     public string? OriginalFileName { get; set; }

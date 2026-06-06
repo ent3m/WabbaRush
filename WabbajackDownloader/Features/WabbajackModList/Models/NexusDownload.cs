@@ -3,7 +3,7 @@ using WabbajackDownloader.Common.Hashing;
 
 namespace WabbajackDownloader.Features.WabbajackModList;
 
-public record NexusDownload(GameData Game, string FileName, string ModID, string FileID, long FileSize, Hash Hash)
+internal sealed record NexusDownload(GameData Game, string FileName, string ModID, string FileID, long FileSize, Hash Hash)
 {
     public string GameID => Game.NexusGameId.ToString();
 

@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackRepo;
 
-public class Links
+internal sealed class Links
 {
     [JsonPropertyName("image")] public string ImageUri { get; set; } = string.Empty;
 

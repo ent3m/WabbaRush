@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackModList;
 
-public class PartDefinition
+internal sealed class PartDefinition
 {
     public long Size { get; set; }
     public long Offset { get; set; }

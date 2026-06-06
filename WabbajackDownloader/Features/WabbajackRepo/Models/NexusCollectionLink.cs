@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackRepo;
 
-public sealed class NexusCollectionLink
+internal sealed class NexusCollectionLink
 {
     [JsonPropertyName("collectionId")]
     public string CollectionId { get; set; } = string.Empty;

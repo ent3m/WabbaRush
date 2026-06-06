@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackModList;
 
-public partial record GameData
+internal sealed partial record GameData
 {
     public Game Game { get; internal init; }
 

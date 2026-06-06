@@ -4,7 +4,7 @@ using WabbajackDownloader.Features.WabbajackRepo;
 
 namespace WabbajackDownloader.Features.WabbajackModList;
 
-public partial record GameData
+internal sealed partial record GameData
 {
     /// Adapted from https://github.com/wabbajack-tools/wabbajack/blob/main/Wabbajack.DTOs/Game/GameRegistry.cs
     private static readonly IReadOnlyDictionary<Game, GameData> Games = new Dictionary<Game, GameData>

@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackRepo;
 
-public class ModListSummary
+internal sealed class ModListSummary
 {
     [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
 

@@ -4,7 +4,7 @@ using WabbajackDownloader.Common.Progress;
 namespace WabbajackDownloader.Features.WabbajackRepo;
 
 // Adapted from https://github.com/wabbajack-tools/wabbajack/blob/main/Wabbajack.DTOs/ModList/ModListMetadata.cs
-public class ModListMetadata
+internal sealed class ModListMetadata
 {
     [JsonPropertyName("title")] public string Title { get; set; } = string.Empty;
 
@@ -48,7 +48,7 @@ public class ModListMetadata
     // Summary text for Tooltip in ComboBox item
     [JsonIgnore]
     public string Summary => summary ??=
-        $"Author: {Author}\nVersion: {Version}\nSize: {DownloadMetadata?.Size.DisplayByteSize()} + {DownloadMetadata?.SizeOfArchives.DisplayByteSize()}";
+        $"Author: {Author}\nVersion: {Version}\nSize: {DownloadMetadata?.Size.FormatByteSize()} + {DownloadMetadata?.SizeOfArchives.FormatByteSize()}";
     private string? summary;
 
     // Override ToString for text search to work in ComboBox

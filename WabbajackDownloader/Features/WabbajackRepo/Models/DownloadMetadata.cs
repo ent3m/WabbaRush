@@ -2,7 +2,7 @@
 
 namespace WabbajackDownloader.Features.WabbajackRepo;
 
-public class DownloadMetadata
+internal sealed class DownloadMetadata
 {
     public Hash Hash { get; set; }
     public long Size { get; set; }

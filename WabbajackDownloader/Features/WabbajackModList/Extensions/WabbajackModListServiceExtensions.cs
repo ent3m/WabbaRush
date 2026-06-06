@@ -6,5 +6,5 @@ internal static class WabbajackModListServiceExtensions
 {
     public static IServiceCollection AddWabbajackModList(this IServiceCollection services) => services
         .AddTransient<ModListDownloader>()
-        .AddTransient<ModlistExtractor>();
+        .AddTransient<ModListExtractor>();
 }

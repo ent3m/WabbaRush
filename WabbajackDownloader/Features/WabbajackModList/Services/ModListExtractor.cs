@@ -5,20 +5,23 @@ using WabbajackDownloader.Common.Hashing;
 
 namespace WabbajackDownloader.Features.WabbajackModList;
 
-public class ModlistExtractor(ILogger<ModlistExtractor> logger)
+internal sealed class ModListExtractor(ILogger<ModListExtractor> logger)
 {
-    private readonly ILogger<ModlistExtractor> _logger = logger;
-
-    // Extract download links from a local .wabbajack file
+    /// <summary>
+    /// Extract download links from a wabbajack modlist given a path to the file.
+    /// </summary>
     public List<NexusDownload> ExtractDownloadLinks(string wabbajackFile)
     {
+        ArgumentNullException.ThrowIfNullOrEmpty(wabbajackFile, nameof(wabbajackFile));
+
+        logger.LogInformation("Extracting downloadable mods from {File}.", wabbajackFile);
+
         var downloads = new List<NexusDownload>();
         using var stream = File.Open(wabbajackFile, FileMode.Open, FileAccess.Read);
         using var file = new ZipArchive(stream, ZipArchiveMode.Read);
 
         // The archive should contain a file named "modlist"
         var entry = file.GetEntry("modlist") ?? throw new InvalidDataException("The wabbajack file does not contain a modlist.");
-        _logger.LogInformation("Extracting downloadable mods from {wabbajackFile}.", wabbajackFile);
         var modlist = JsonNode.Parse(entry.Open())?.AsObject();
         if (modlist != null)
         {
@@ -41,7 +44,7 @@ public class ModlistExtractor(ILogger<ModlistExtractor> logger)
 
                     if (name == null || hash == null || meta == null)
                     {
-                        _logger.LogDebug("This entry is not a nexus download. Skipping ahead.\nInvalid entry:\n{entry}", archiveObject);
+                        logger.LogTrace("This entry is not a nexus download. Skipping ahead. Invalid entry:\n{Entry}", archiveObject);
                         continue;
                     }
 
@@ -53,24 +56,24 @@ public class ModlistExtractor(ILogger<ModlistExtractor> logger)
                             // Add valid entry to list
                             var download = new NexusDownload(game, name, modID, fileID, size, Hash.Interpret(hash));
                             downloads.Add(download);
-                            _logger.LogDebug("Mod {name} is added to download.", name);
+                            logger.LogTrace("Mod {name} is added to download.", name);
                         }
                     }
                     else
                     {
-                        _logger.LogDebug("Cannot extract game name, mod ID, and file ID from:\n{meta}.", meta);
+                        logger.LogTrace("Cannot extract game name, mod ID, and file ID from:\n{meta}.", meta);
                     }
                 }
             }
             else
             {
-                _logger.LogError("Cannot extract downloads from wabbajack file: no Archives entry found.");
+                logger.LogError("Cannot extract downloads from wabbajack file: no Archives entry found.");
             }
         }
         else
-            _logger.LogError("Cannot extract downloads from wabbajack file: modlist is not a valid json object.");
+            logger.LogError("Cannot extract downloads from wabbajack file: modlist is not a valid JSON object.");
 
-        _logger.LogInformation("Extracted {count} downloadable mods from modlist.", downloads.Count);
+        logger.LogInformation("Extracted {Count} downloadable mods from modlist.", downloads.Count);
         return downloads;
     }
 
