@@ -1,0 +1,150 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:WabbajackDownloader.Features.Dashboard"
+             xmlns:webview="using:WabbajackDownloader.Features.WebView"
+             xmlns:progress="using:WabbajackDownloader.Common.Progress"
+             xmlns:sys="using:System"
+             x:Class="WabbajackDownloader.Features.Dashboard.DownloadPage"
+             x:DataType="local:DownloadPageViewModel">
+
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <MergeResourceInclude Source="/Features/Dashboard/Download/InputBlocker.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+
+  <UserControl.DataTemplates>
+    <DataTemplate x:DataType="progress:DownloadProgressDisplay">
+      <StackPanel Orientation="Vertical"
+                  Spacing="4"
+                  Margin="8,0,8,0">
+        <Grid ColumnDefinitions="*,4,Auto"
+              HorizontalAlignment="Center">
+          <TextBlock Grid.Column="0"
+                     Text="{Binding Title}"
+                     TextTrimming="CharacterEllipsis"
+                     HorizontalAlignment="Right"/>
+          <TextBlock Grid.Column="2"
+                     Text="{Binding FormattedFileSize, Mode=OneTime}"
+                     HorizontalAlignment="Left"/>
+        </Grid>
+        <progress:CircularProgressBar Minimum="{Binding Minimum}"
+                                      Maximum="{Binding Maximum}"
+                                      Value="{Binding Value}"/>
+        <TextBlock Text="{Binding Description}"
+                   HorizontalAlignment="Center"/>
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:DataType="{x:Type progress:ProgressDisplay, x:TypeArguments=sys:Int64}">
+      <StackPanel Orientation="Vertical"
+                  Spacing="4">
+        <TextBlock Text="{Binding Title}"
+                   HorizontalAlignment="Center"/>
+        <ProgressBar Minimum="{Binding Minimum}"
+                     Maximum="{Binding Maximum}"
+                     Value="{Binding Value}"
+                     IsIndeterminate="{Binding IsIndeterminate}"
+                     ShowProgressText="{Binding !$self.IsIndeterminate}"
+                     ProgressTextFormat="{}{0}/{3}"/>
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <DockPanel Grid.Row="0">
+    <!-- Address Bar -->
+    <StackPanel DockPanel.Dock="Top"
+                Orientation="Horizontal"
+                Height="30"
+                Spacing="10"
+                IsHitTestVisible="False">
+      <Rectangle Width="24"
+                 Height="24"
+                 VerticalAlignment="Center"
+                 Fill="{StaticResource NexusLogo}"/>
+      <TextBlock Text="{Binding AddressText, Mode=OneWay}"
+                 VerticalAlignment="Center"/>
+    </StackPanel>
+
+    <Grid RowDefinitions="*, 1, Auto">
+      <!-- WebView -->
+      <local:InputBlocker Grid.Row="0"
+                          IsLocked="{Binding BlockInput}">
+        <webview:WebView2 Name="WebView"
+                          AllowPopup="False"
+                          Source="{Binding Address, Mode=TwoWay}"
+                          JavaScriptRunner="{Binding JSRunner}"
+                          DefaultDownloadFolderPath="{Binding DownloadFolderPath}"
+                          NavigationCompletedCommand="{Binding NavigationCompletedCommand}"
+                          DownloadStartingCommand="{Binding DownloadStartingCommand}"/>
+      </local:InputBlocker>
+
+      <GridSplitter Grid.Row="1"
+                    Background="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                    ResizeDirection="Rows"/>
+
+      <Grid Grid.Row="2"
+            RowDefinitions="Auto, *, Auto"
+            Grid.IsSharedSizeScope="True"
+            MinHeight="238">
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition SharedSizeGroup="LeftRight"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition SharedSizeGroup="LeftRight"/>
+          </Grid.ColumnDefinitions>
+          <!-- Navigation Buttons -->
+          <Button Grid.Column="0"
+                  Command="{Binding GoBackCommand}"
+                  IsVisible="{Binding !DownloadCommand.IsRunning}"
+                  ToolTip.Tip="Return to setup"
+                  VerticalAlignment="Top"
+                  Margin="16">
+            <TextBlock Text="Return"/>
+          </Button>
+          <Button Grid.Column="0"
+                  Command="{Binding CancelDownloadsCommand}"
+                  IsVisible="{Binding DownloadCommand.IsRunning}"
+                  ToolTip.Tip="Cancel ongoing downloads"
+                  VerticalAlignment="Top"
+                  Margin="16">
+            <TextBlock Text="Cancel"/>
+          </Button>
+          <!-- Total Progress -->
+          <TextBlock Grid.Column="1"
+                     IsVisible="{Binding !DownloadCommand.IsRunning}"
+                     VerticalAlignment="Center"
+                     HorizontalAlignment="Center"
+                     Text="Please login and click Download"/>
+          <ContentControl Grid.Column="1"
+                          Content="{Binding TotalProgress}"
+                          IsVisible="{Binding DownloadCommand.IsRunning}"
+                          Margin="8"/>
+        </Grid>
+        <!-- Download Progresses -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding DownloadProgresses}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <local:AutoGrid MaxColumns="5"
+                                RowSpacing="16"
+                                ColumnSpacing="16" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+          </ItemsControl>
+        </ScrollViewer>
+        <!-- Download Button -->
+        <Button Grid.Row="2"
+                Command="{Binding DownloadCommand}"
+                HorizontalAlignment="Center"
+                Margin="16"
+                ToolTip.Tip="Begin download">
+          <TextBlock Text="Download"/>
+        </Button>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</UserControl>

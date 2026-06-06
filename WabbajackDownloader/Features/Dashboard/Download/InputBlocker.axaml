@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:WabbajackDownloader.Features.Dashboard">
+
+  <ControlTheme x:Key="{x:Type controls:InputBlocker}" TargetType="controls:InputBlocker">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Grid x:Name="PART_Root"
+              ClipToBounds="True">
+
+          <ContentPresenter Content="{TemplateBinding Content}"
+                            ContentTemplate="{TemplateBinding ContentTemplate}" />
+
+          <Popup x:Name="PART_Popup"
+                 Placement="AnchorAndGravity"
+                 PlacementAnchor="TopLeft"
+                 PlacementGravity="BottomRight"
+                 ShouldUseOverlayLayer="False"
+                 IsLightDismissEnabled="False"
+                 OverlayDismissEventPassThrough="False"
+                 TakesFocusFromNativeControl="True"
+                 Topmost="False">
+            <Border x:Name="PART_Shield"
+                    Background="Transparent"
+                    IsHitTestVisible="True"
+                    Focusable="True"
+                    Cursor="No" />
+          </Popup>
+
+        </Grid>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>
