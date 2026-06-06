@@ -1,0 +1,143 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:WabbajackDownloader.Features.Dashboard"
+             xmlns:progress="using:WabbajackDownloader.Common.Progress"
+             xmlns:wabba="using:WabbajackDownloader.Features.WabbajackRepo"
+             x:Class="WabbajackDownloader.Features.Dashboard.SetupPage"
+             x:DataType="local:SetupPageViewModel">
+
+  <UserControl.Resources>
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0%,50%" EndPoint="100%,50%">
+      <GradientStop Offset="0" Color="{DynamicResource SystemAccentColorDark1}"/>
+      <GradientStop Offset="0.5" Color="{DynamicResource SystemAccentColor}"/>
+      <GradientStop Offset="1" Color="{DynamicResource SystemAccentColorLight1}"/>
+    </LinearGradientBrush>
+  </UserControl.Resources>
+
+  <StackPanel Orientation="Vertical"
+              VerticalAlignment="Center"
+              Spacing="10">
+
+    <!-- Banner -->
+    <TextBlock FontFamily="{StaticResource BannerFont}"
+               FontSize="64"
+               FontWeight="Heavy"
+               Foreground="{DynamicResource AccentGradientBrush}"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Text="WabbaRush"/>
+
+    <!-- Main Container -->
+    <Grid ColumnDefinitions="*,4*,*">
+      <StackPanel Orientation="Vertical"
+                  Spacing="10"
+                  Grid.Column="1">
+
+        <StackPanel.Styles>
+          <Style Selector="Button.picker">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="3"/>
+            <Style Selector="^ TextBlock">
+              <Setter Property="Grid.Column" Value="1"/>
+              <Setter Property="HorizontalAlignment" Value="Center"/>
+            </Style>
+            <Style Selector="^ PathIcon">
+              <Setter Property="Data" Value="{StaticResource FolderIcon}"/>
+              <Setter Property="Grid.Column" Value="2"/>
+              <Setter Property="HorizontalAlignment" Value="Center"/>
+            </Style>
+            <Style Selector="^:pointerover">
+              <Style Selector="^ PathIcon">
+                <Setter Property="Data" Value="{StaticResource FolderOpenIcon}"/>
+              </Style>
+            </Style>
+          </Style>
+        </StackPanel.Styles>
+
+        <!-- Folder selection -->
+        <Button Name="folderPickerButton"
+                Classes="picker"
+                Command="{Binding OpenDownloadFolderPickerCommand}"
+                IsEnabled="{Binding !ProceedCommand.IsRunning}">
+          <Grid ColumnDefinitions="32,*,32"
+                Width="{Binding $parent.Bounds.Width}">
+            <TextBlock Text="{Binding DownloadFolderPath, TargetNullValue='Select Download Folder'}"/>
+            <PathIcon />
+          </Grid>
+        </Button>
+
+        <!-- File selection -->
+        <Button Classes="picker"
+                Command="{Binding OpenWabbajackFilePickerCommand}"
+                IsVisible="{Binding #UseLocalFileButton.IsChecked}">
+          <Grid ColumnDefinitions="32,*,32"
+                Width="{Binding $parent.Bounds.Width}">
+            <TextBlock Text="{Binding LocalFilePath, TargetNullValue='Select Wabbajack File'}"/>
+            <PathIcon/>
+          </Grid>
+        </Button>
+
+        <ComboBox HorizontalAlignment="Stretch"
+                  Height="{Binding #folderPickerButton.Bounds.Height}"
+                  IsVisible="{Binding !#UseLocalFileButton.IsChecked}"
+                  ItemsSource="{Binding ModLists}"
+                  SelectedIndex="{Binding SelectedModListIndex}"
+                  PlaceholderText="Select Mod List"
+                  HorizontalContentAlignment="Center"
+                  MaxDropDownHeight="432">
+          <ComboBox.ItemTemplate>
+            <DataTemplate DataType="wabba:ModListMetadata">
+              <TextBlock Text="{Binding Title}"
+                         ToolTip.Tip="{Binding Summary}"
+                         HorizontalAlignment="Center"/>
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+
+        <!-- Settings, Proceed, UseLocalFile -->
+        <Grid ColumnDefinitions="32,*,32">
+          <Button Command="{Binding OpenSettingsCommand}"
+                  Grid.Column="0"
+                  HorizontalAlignment="Left"
+                  BorderThickness="0"
+                  ToolTip.Tip="Advanced Settings">
+            <PathIcon Data="{StaticResource GearIcon}"/>
+          </Button>
+
+          <Button Command="{Binding ProceedCommand}"
+                  Width="128"
+                  Grid.Column="1"
+                  HorizontalAlignment="Center"
+                  ToolTip.Tip="Proceed to downloads">
+            <TextBlock Text="Proceed"
+                       HorizontalAlignment="Center"/>
+          </Button>
+
+          <ToggleButton Name="UseLocalFileButton"
+                        IsChecked="{Binding UseLocalFile}"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right">
+            <PathIcon />
+            <ToggleButton.Styles>
+              <Style Selector=" PathIcon">
+                <Setter Property="Data" Value="{StaticResource DownloadIcon}" />
+              </Style>
+              <Style Selector=":checked PathIcon">
+                <Setter Property="Data" Value="{StaticResource UploadIcon}" />
+              </Style>
+              <Style Selector="ToggleButton:checked">
+                <Setter Property="ToolTip.Tip" Value="Select modlist from repository" />
+              </Style>
+              <Style Selector="ToggleButton:not(:checked)">
+                <Setter Property="ToolTip.Tip" Value="Select local wabbajack file" />
+              </Style>
+            </ToggleButton.Styles>
+          </ToggleButton>
+        </Grid>
+
+      </StackPanel>
+    </Grid>
+  </StackPanel>
+</UserControl>

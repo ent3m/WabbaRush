@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace WabbajackDownloader.Features.Dashboard;
 
-public partial class NexusWindow : Window
+internal sealed partial class SettingsPage : UserControl
 {
-    public NexusWindow()
+    public SettingsPage()
     {
         InitializeComponent();
     }

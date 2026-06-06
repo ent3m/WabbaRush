@@ -1,0 +1,132 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:WabbajackDownloader.Features.Dashboard"
+             xmlns:config="using:WabbajackDownloader.Common.Configuration"
+             x:Class="WabbajackDownloader.Features.Dashboard.SettingsPage"
+             x:DataType="local:SettingsPageViewModel">
+
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <MergeResourceInclude Source="/Features/Dashboard/Settings/ButtonSpinnerControlTheme.axaml"/>
+        <MergeResourceInclude Source="/Features/Dashboard/Settings/ControlThemes.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </UserControl.Resources>
+
+  <StackPanel Orientation="Vertical"
+              VerticalAlignment="Center"
+              Spacing="10">
+    <!-- Update -->
+    <Grid ColumnDefinitions="*,Auto,*">
+      <Button Grid.Column="0"
+              HorizontalAlignment="Right"
+              BorderThickness="0"
+              Command="{Binding OpenRepoCommand}"
+              ToolTip.Tip="Open GitHub repository">
+        <PathIcon Foreground="{DynamicResource SystemBaseMediumHighColor}"
+                  Data="{StaticResource GitHubIcon}"/>
+      </Button>
+      <Button Grid.Column="1"
+              HorizontalAlignment="Center"
+              Command="{Binding CheckForUpdatesCommand}"
+              ToolTip.Tip="Check for a newer version">
+        <TextBlock Text="Check for updates"/>
+      </Button>
+    </Grid>
+    <!-- Parts -->
+    <Grid ColumnDefinitions="*,Auto,*">
+      <TextBlock Grid.Column="0"
+                 Text="Download Part:"
+                 HorizontalAlignment="Right"/>
+      <StackPanel Grid.Column="1"
+                  Orientation="Horizontal"
+                  HorizontalAlignment="Center"
+                  ToolTip.Tip="Select the current part to download and the total number of parts the modlist is split into.">
+        <NumericUpDown Value="{Binding CurrentPart}"
+                       Minimum="{Binding Source={x:Static config:SettingsManager.TotalPartsLowerBound}, Converter={StaticResource IntDecimalConverter}}"
+                       Maximum="{Binding #TotalPartsInput.Value}"/>
+        <TextBlock Text="of"
+                   VerticalAlignment="Center"/>
+        <NumericUpDown Name="TotalPartsInput"
+                       Value="{Binding TotalParts}"
+                       Minimum="{Binding Source={x:Static config:SettingsManager.TotalPartsLowerBound}, Converter={StaticResource IntDecimalConverter}}"
+                       Maximum="{Binding Source={x:Static config:SettingsManager.TotalPartsUpperBound}, Converter={StaticResource IntDecimalConverter}}"/>
+      </StackPanel>
+    </Grid>
+    <!-- Download size -->
+    <Grid ColumnDefinitions="*,Auto,*">
+      <TextBlock Grid.Column="0"
+                 HorizontalAlignment="Right"
+                 Text="Max Download Size:"/>
+      <StackPanel Grid.Column="1"
+                  HorizontalAlignment="Center"
+                  Orientation="Vertical"
+                  Spacing="0"
+                  Margin="0"
+                  ToolTip.Tip="The maximum file size that will be downloaded. It is recommended to download large files manually.">
+        <Slider Grid.Column="1"
+                Name="DownloadSizeInput"
+                TickFrequency="1"
+                IsSnapToTickEnabled="True"
+                Width="260"
+                Value="{Binding MaxDownloadSize}"
+                Minimum="{Binding Source={x:Static config:SettingsManager.DownloadSizeLowerBound}, Converter={StaticResource IntDoubleConverter}}"
+                Maximum="{Binding Source={x:Static config:SettingsManager.DownloadSizeUpperBound}, Converter={StaticResource IntDoubleConverter}}"/>
+        <StackPanel Orientation="Horizontal"
+                    HorizontalAlignment="Center">
+          <TextBlock Text="{Binding #DownloadSizeInput.Value}"/>
+          <ComboBox SelectedItem="{Binding FileSizeUnit}"
+                    ItemsSource="{Binding FileSizeUnitOptions, Mode=OneTime}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding}"/>
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+    <!-- Concurrency -->
+    <Grid ColumnDefinitions="*,Auto,*">
+      <TextBlock Grid.Column="0"
+                 HorizontalAlignment="Right"
+                 Text="Max Concurrent Downloads:"/>
+      <NumericUpDown Grid.Column="1"
+                     HorizontalAlignment="Center"
+                     Value="{Binding Concurrency}"
+                     Minimum="{Binding Source={x:Static config:SettingsManager.ConcurrencyLowerBound}, Converter={StaticResource IntDecimalConverter}}"
+                     Maximum="{Binding Source={x:Static config:SettingsManager.ConcurrencyUpperBound}, Converter={StaticResource IntDecimalConverter}}"
+                     ToolTip.Tip="The maximum number of simultaneous downloads. Total download speed is throttled for free Nexus users regardless of this setting."/>
+    </Grid>
+    <!-- Retries -->
+    <Grid ColumnDefinitions="*,Auto,*">
+      <TextBlock Grid.Column="0"
+                 Text="Max Retries:"
+                 HorizontalAlignment="Right"/>
+      <NumericUpDown Grid.Column="1"
+                     HorizontalAlignment="Center"
+                     Value="{Binding MaxRetries}"
+                     Minimum="{Binding Source={x:Static config:SettingsManager.RetriesLowerBound}, Converter={StaticResource IntDecimalConverter}}"
+                     Maximum="{Binding Source={x:Static config:SettingsManager.RetriesUpperBound}, Converter={StaticResource IntDecimalConverter}}"
+                     ToolTip.Tip="The maximum number of retries per failed download."/>
+    </Grid>
+    <!-- Clear download folder -->
+    <Grid ColumnDefinitions="*,Auto,*">
+      <TextBlock Grid.Column="0"
+                 HorizontalAlignment="Right"
+                 Text="Clear download folder:"/>
+      <CheckBox Grid.Column="1"
+                Margin="18,0,0,0"
+                HorizontalAlignment="Center"
+                IsChecked="{Binding ClearDownloadFolder}"
+                ToolTip.Tip="Whether to delete unrelated files in download folder before starting. Useful for removing outdated archives from previous modlists.&#x0a;This setting is only valid for the current session and will not be saved."/>
+    </Grid>
+    <!-- Save and return -->
+    <Button Command="{Binding GoBackCommand}"
+            HorizontalAlignment="Center"
+            ToolTip.Tip="Return to setup">
+      <TextBlock Text="Return"/>
+    </Button>
+  </StackPanel>
+</UserControl>

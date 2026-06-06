@@ -1,0 +1,40 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ControlTheme x:Key="{x:Type Grid}" TargetType="Grid">
+    <Setter Property="ColumnSpacing" Value="10"/>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type NumericUpDown}" TargetType="NumericUpDown" BasedOn="{StaticResource {x:Type NumericUpDown}}">
+    <Setter Property="Increment" Value="1"/>
+    <Setter Property="FormatString" Value="0"/>
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    <Setter Property="Width" Value="140"/>
+
+    <Style Selector="^ /template/ TextBox#PART_TextBox">
+      <Setter Property="Margin" Value="0"/>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type Slider}" TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+    <Style Selector="^:horizontal /template/ Track RepeatButton Border">
+      <Setter Property="Height" Value="3"/>
+    </Style>
+
+    <Style Selector="^:horizontal /template/ Track Thumb">
+      <Setter Property="Height" Value="16"/>
+      <Setter Property="Width" Value="16"/>
+    </Style>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type StackPanel}" TargetType="StackPanel">
+    <Setter Property="Spacing" Value="10"/>
+  </ControlTheme>
+
+  <ControlTheme x:Key="{x:Type TextBlock}" TargetType="TextBlock">
+    <Setter Property="VerticalAlignment" Value="Center"/>
+    <Setter Property="TextAlignment" Value="Center"/>
+  </ControlTheme>
+
+</ResourceDictionary>
