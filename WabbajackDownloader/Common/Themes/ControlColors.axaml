@@ -1,0 +1,38 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- This ResourceDictionary is included in both ThemeDictionaries and resolved per ThemeDictionary.
+       Brushes should point to the correct light/dark colors even though they are StaticResources. -->
+
+  <!-- Button -->
+  <StaticResource x:Key="ButtonBackground" ResourceKey="SystemControlTransparentBrush" />
+  <StaticResource x:Key="ButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ButtonBackgroundPressed" ResourceKey="PressedBrush" />
+  <StaticResource x:Key="ButtonBackgroundDisabled" ResourceKey="SystemControlTransparentBrush" />
+  <StaticResource x:Key="ButtonBorderBrush" ResourceKey="SystemControlForegroundBaseMediumBrush" />
+  <StaticResource x:Key="ButtonBorderBrushPointerOver" ResourceKey="SystemControlHighlightBaseMediumHighBrush" />
+  <StaticResource x:Key="ButtonBorderBrushPressed" ResourceKey="SystemControlHighlightBaseMediumBrush" />
+
+  <!-- ComboBox -->
+  <StaticResource x:Key="ComboBoxBackground" ResourceKey="SystemControlTransparentBrush" />
+  <StaticResource x:Key="ComboBoxBackgroundPointerOver" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ComboBoxBackgroundPressed" ResourceKey="PressedBrush" />
+  <StaticResource x:Key="ComboBoxDropDownGlyphForeground" ResourceKey="AccentBrush" />
+  <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocused" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ComboBoxDropDownGlyphForegroundFocusedPressed" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="BackgroundColor" />
+  <StaticResource x:Key="ComboBoxItemBackgroundPressed" ResourceKey="PressedBrush" />
+  <StaticResource x:Key="ComboBoxItemBackgroundPointerOver" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ComboBoxItemBackgroundSelected" ResourceKey="SelectedBrush" />
+  <StaticResource x:Key="ComboBoxItemBackgroundSelectedPressed" ResourceKey="PressedBrush" />
+  <StaticResource x:Key="ComboBoxItemBackgroundSelectedPointerOver" ResourceKey="HoverBrush" />
+
+  <!-- ToggleButton -->
+  <StaticResource x:Key="ToggleButtonBackground" ResourceKey="SystemControlTransparentBrush" />
+  <StaticResource x:Key="ToggleButtonBackgroundPointerOver" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ToggleButtonBackgroundPressed" ResourceKey="PressedBrush" />
+  <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="SystemControlTransparentBrush" />
+  <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="HoverBrush" />
+  <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="PressedBrush" />
+
+</ResourceDictionary>

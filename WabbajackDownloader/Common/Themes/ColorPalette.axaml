@@ -1,0 +1,46 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Default">
+      <Color x:Key="BackgroundColor">#FBF9FF</Color>
+      <StaticResource x:Key="SystemRegionColor" ResourceKey="BackgroundColor" />
+      <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource BackgroundColor}" Opacity="0.85" />
+
+      <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource SystemAccentColor}" />
+      <SolidColorBrush x:Key="HoverBrush" Color="{DynamicResource SystemAccentColorLight1}" Opacity="0.85" />
+      <SolidColorBrush x:Key="PressedBrush" Color="{DynamicResource SystemAccentColorDark1}" Opacity="0.85" />
+      <SolidColorBrush x:Key="SelectedBrush" Color="{DynamicResource SystemAccentColor}" Opacity="0.35" />
+
+      <Color x:Key="ErrorBackgroundColor">#EF6469</Color>
+      <Color x:Key="InfoBackgroundColor">#668DF2</Color>
+      <Color x:Key="SuccessBackgroundColor">#27C16A</Color>
+      <Color x:Key="WarningBackgroundColor">#F6AB28</Color>
+
+      <ResourceDictionary.MergedDictionaries>
+        <MergeResourceInclude Source="/Common/Themes/ControlColors.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="BackgroundColor">#202020</Color>
+      <StaticResource x:Key="SystemRegionColor" ResourceKey="BackgroundColor" />
+      <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource BackgroundColor}" Opacity="0.8" />
+
+      <SolidColorBrush x:Key="AccentBrush" Color="{DynamicResource SystemAccentColor}" />
+      <SolidColorBrush x:Key="HoverBrush" Color="{DynamicResource SystemAccentColorDark1}" Opacity="0.8" />
+      <SolidColorBrush x:Key="PressedBrush" Color="{DynamicResource SystemAccentColorLight1}" Opacity="0.8" />
+      <SolidColorBrush x:Key="SelectedBrush" Color="{DynamicResource SystemAccentColor}" Opacity="0.3" />
+
+      <Color x:Key="ErrorBackgroundColor">#A73838</Color>
+      <Color x:Key="InfoBackgroundColor">#2D49AB</Color>
+      <Color x:Key="SuccessBackgroundColor">#15803D</Color>
+      <Color x:Key="WarningBackgroundColor">#C57703</Color>
+
+      <ResourceDictionary.MergedDictionaries>
+        <MergeResourceInclude Source="/Common/Themes/ControlColors.axaml"/>
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>
