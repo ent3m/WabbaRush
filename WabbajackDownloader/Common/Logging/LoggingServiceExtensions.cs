@@ -1,17 +1,23 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace WabbajackDownloader.Common.Logging;
 
-public static class LoggingServiceExtensions
+internal static class LoggingServiceExtensions
 {
-    public static IServiceCollection AddLogger(this IServiceCollection services)
+    private static ILoggingBuilder AddPlatformProvider(this ILoggingBuilder builder)
     {
-        services.AddSingleton<LogLevelSwitch>();
 #if DEBUG
-        services.AddSingleton<ILoggerProvider, DebugLoggerProvider>();
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, DebugLoggerProvider>());
 #else
-        services.AddSingleton<ILoggerProvider, FileLoggerProvider>();
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, FileLoggerProvider>());
 #endif
-        return services.AddLogging(builder => builder.SetMinimumLevel(LogLevel.Trace));
+        return builder;
     }
+
+    public static IServiceCollection AddLogger(this IServiceCollection services) => services
+        .AddSingleton<LogLevelSwitch>()
+        .AddLogging(static builder => builder
+        .SetMinimumLevel(LogLevel.Trace)
+        .AddPlatformProvider());
 }

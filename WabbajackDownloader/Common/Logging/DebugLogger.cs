@@ -2,14 +2,14 @@
 
 namespace WabbajackDownloader.Common.Logging;
 
-internal class DebugLoggerProvider : ILoggerProvider, IDisposable
+internal sealed class DebugLoggerProvider : ILoggerProvider, IDisposable
 {
     public ILogger CreateLogger(string name) => new DebugLogger(name);
 
     public void Dispose() { }
 }
 
-file class DebugLogger(string name) : ILogger
+file sealed class DebugLogger(string name) : ILogger
 {
     private readonly string name = name;
 
@@ -26,7 +26,8 @@ file class DebugLogger(string name) : ILogger
         if (string.IsNullOrEmpty(message))
             return;
 
-        message = $"{logLevel}: {message}";
+        var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+        message = $"{timestamp} [{logLevel}]: {message}";
         if (exception != null)
             message += Environment.NewLine + Environment.NewLine + exception;
 

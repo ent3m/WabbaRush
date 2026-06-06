@@ -4,7 +4,7 @@ using WabbajackDownloader.Common.Hashing;
 
 namespace WabbajackDownloader.Common.Serialization;
 
-internal class HashJsonConverter : JsonConverter<Hash>
+internal sealed class HashJsonConverter : JsonConverter<Hash>
 {
     public override Hash Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

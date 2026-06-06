@@ -1,44 +1,77 @@
 ﻿using System.IO;
+using System.Threading.Channels;
 
 namespace WabbajackDownloader.Common.Logging;
 
-internal class FileLoggerProvider : ILoggerProvider, IDisposable
+internal sealed class FileLoggerProvider : ILoggerProvider, IDisposable
 {
     private readonly StreamWriter _writer;
     private readonly LogLevelSwitch _logLevelSwitch;
-    private readonly Lock _lock = new();
+    private readonly Channel<string> _channel;
+    private readonly Task _backgroundTask;
 
     public FileLoggerProvider(LogLevelSwitch logLevelSwitch)
     {
         var baseDir = AppContext.BaseDirectory;
-        var path = Path.Combine(baseDir, "debug.json");
+        var timeStamp = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss");
+        var path = Path.Combine(baseDir, $"log-{timeStamp}.txt");
         var fullPath = Path.GetFullPath(path);
         var directory = Path.GetDirectoryName(fullPath);
         if (directory is not null)
             Directory.CreateDirectory(directory);
 
         _logLevelSwitch = logLevelSwitch;
-        _writer = new StreamWriter(fullPath, append: true)
+        _writer = new StreamWriter(fullPath) { AutoFlush = true };
+
+        _channel = Channel.CreateUnbounded<string>(
+            new UnboundedChannelOptions
+            {
+                SingleReader = true,
+                SingleWriter = false,
+                AllowSynchronousContinuations = false
+            });
+
+        _backgroundTask = Task.Run(ProcessLogQueueAsync);
+    }
+
+    private async Task ProcessLogQueueAsync()
+    {
+        try
         {
-            AutoFlush = true
-        };
+            await foreach (var message in _channel.Reader.ReadAllAsync())
+            {
+                _writer.WriteLine(message);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+
+        }
+        finally
+        {
+            // Flush any remaining items before closing
+            while (_channel.Reader.TryRead(out var message))
+            {
+                _writer.WriteLine(message);
+            }
+        }
     }
 
     public ILogger CreateLogger(string categoryName)
-        => new FileLogger(categoryName, _writer, _lock, _logLevelSwitch);
+        => new FileLogger(categoryName, _channel.Writer, _logLevelSwitch);
 
     public void Dispose()
     {
+        _channel.Writer.Complete();
+        try { _backgroundTask.GetAwaiter().GetResult(); } catch { }
         _writer.Dispose();
-        GC.SuppressFinalize(this);
     }
 }
 
-file class FileLogger(string category, StreamWriter writer, Lock lockObject, LogLevelSwitch logLevelSwitch) : ILogger
+file sealed class FileLogger(string category, ChannelWriter<string> channelWriter, LogLevelSwitch logLevelSwitch) : ILogger
 {
     private readonly string _category = category;
-    private readonly StreamWriter _writer = writer;
-    private readonly Lock _lockObject = lockObject;
+    private readonly ChannelWriter<string> _channelWriter = channelWriter;
     private readonly LogLevelSwitch _logLevelSwitch = logLevelSwitch;
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
@@ -55,11 +88,12 @@ file class FileLogger(string category, StreamWriter writer, Lock lockObject, Log
             return;
 
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        lock (_lockObject)
-        {
-            _writer.WriteLine($"{timestamp} [{logLevel}] {_category}: {message}");
-            if (exception is not null)
-                _writer.WriteLine(exception);
-        }
+        string logLine;
+        if (exception is null)
+            logLine = $"{timestamp} [{logLevel}] {_category}: {message}";
+        else
+            logLine = $"{timestamp} [{logLevel}] {_category}: {message}{Environment.NewLine}{exception}";
+
+        _channelWriter.TryWrite(logLine);
     }
 }
