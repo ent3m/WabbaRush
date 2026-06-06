@@ -1,0 +1,18 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="using:WabbajackDownloader.Features.Frame">
+
+  <ControlTheme x:Key="{x:Type controls:Shell}" TargetType="controls:Shell">
+    <Setter Property="Template">
+      <ControlTemplate>
+        <TransitioningContentControl Content="{TemplateBinding Content}"
+                                     ContentTemplate="{TemplateBinding ContentTemplate}">
+          <TransitioningContentControl.PageTransition>
+            <!-- Use CrossFade because Avalonia animations mess up NativeControlHost's transforms (Issue #14747) -->
+            <CrossFade Duration="0:00:00.125" />
+          </TransitioningContentControl.PageTransition>
+        </TransitioningContentControl>
+      </ControlTemplate>
+    </Setter>
+  </ControlTheme>
+</ResourceDictionary>

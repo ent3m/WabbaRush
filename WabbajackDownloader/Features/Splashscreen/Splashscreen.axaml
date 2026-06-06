@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:WabbajackDownloader.Features.Splashscreen"
+        x:Class="WabbajackDownloader.Features.Splashscreen.Splashscreen"
+        x:DataType="local:SplashscreenViewModel"
+        Icon="{StaticResource AppIcon}"
+        Title="WabbaRush"
+        Width="280" Height="280" Topmost="True"
+        WindowDecorations="None"
+        WindowStartupLocation="CenterScreen"
+        Background="Transparent"
+        BorderBrush="Transparent">
+  
+  <StackPanel Orientation="Vertical">
+    <Rectangle Width="260"
+               Height="260"
+               Fill="{StaticResource WabbaRushLogo}" />
+    <TextBlock Text="{Binding LoadingText}"
+               FontWeight="SemiBold"
+               TextAlignment="Center"/>
+  </StackPanel>
+  
+</Window>
