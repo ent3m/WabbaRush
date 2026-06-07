@@ -18,15 +18,15 @@ WabbaRush automates Wabbajack modlist downloads for free Nexus users.
 1. Select a download folder and a modlist.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/faa4ed89-954e-4d28-a86f-d8c55ea34f2c">
-  <img width="85%" alt="AppSetup" src="https://github.com/user-attachments/assets/f70cf039-c934-4f6b-ae20-1cbf9edb1371">
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/8906557e-a94a-43f1-a681-d1c672d51441">
+  <img width="85%" alt="AppSetup" src="https://github.com/user-attachments/assets/06376dc2-4cb1-4562-a072-6dc09434bb2b">
 </picture>
 
 2. Customize download behaviors in settings.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/8f890606-b70d-429c-af92-1a6c315a23bf">
-  <img width="85%" alt="AppSettings" src="https://github.com/user-attachments/assets/50af460a-0027-477b-ab32-47a0804b8e08">
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/user-attachments/assets/ccc75efe-6f99-4431-9002-faa0b9e58b59">
+  <img width="85%" alt="AppSettings" src="https://github.com/user-attachments/assets/25ef11f6-040c-4c9e-a77d-71f8e840fccf">
 </picture>
 
 3. Login, click download, and let it run.
