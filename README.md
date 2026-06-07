@@ -1,4 +1,4 @@
-# WabbaRush [![Latest Release](https://img.shields.io/github/v/release/ent3m/WabbaRush?colors=blue)](https://github.com/ent3m/WabbaRush/releases)
+# WabbaRush [![Latest Release](https://badgen.net/github/release/ent3m/WabbaRush?icon=github&label=stable)](https://github.com/ent3m/WabbaRush/releases)
 
 WabbaRush automates Wabbajack modlist downloads for free Nexus users.
 
@@ -46,7 +46,7 @@ WabbaRush automates Wabbajack modlist downloads for free Nexus users.
 
 ```
 git clone https://github.com/ent3m/WabbaRush.git
-cd WabbajackDownloader
+cd WabbaRush
 dotnet publish -c Release -r win-x64
 ```
 
